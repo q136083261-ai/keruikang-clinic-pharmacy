@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>可瑞康诊所 · 药品目录</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="catalog.css">
+  <link rel="stylesheet" href="theme-red.css">
+</head>
+<body class="catalog-body">
+  <header class="catalog-header">
+    <div class="catalog-brand"><div class="brand-mark">医</div><div><strong>可瑞康诊所</strong><span>药品信息查询</span></div></div>
+    <div class="catalog-contact">药品信息仅供参考 · 请遵医嘱购药</div>
+  </header>
+  <main class="catalog-main">
+    <section class="catalog-hero">
+      <span class="eyebrow">MEDICINE CATALOG</span>
+      <h1>可售药品目录</h1>
+      <p>查询药品规格、零售价格与库存状态。处方药请在医生指导下使用。</p>
+      <div class="catalog-tools"><label class="catalog-search"><span>⌕</span><input id="catalogSearch" placeholder="搜索药品名称、分类或规格"></label><select id="catalogCategory"><option value="">全部分类</option></select></div>
+    </section>
+    <section class="catalog-notice"><strong>温馨提示</strong><span>页面不会展示诊所内部精确库存。实际可售数量、适用人群和用药方式请咨询工作人员。</span></section>
+    <div class="catalog-summary"><span id="catalogCount"></span><small id="catalogUpdated"></small></div>
+    <section class="catalog-grid" id="catalogGrid"></section>
+    <footer>可瑞康诊所 · 药品信息查询窗口</footer>
+  </main>
+  <script src="catalog.js"></script>
+  <script src="themes.js"></script>
+</body>
+</html>

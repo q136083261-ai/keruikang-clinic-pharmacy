@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>可瑞康诊所 · 药房管理</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="theme-red.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">医</div>
+      <div><strong>可瑞康诊所</strong><span>药房管理系统</span></div>
+    </div>
+    <nav id="nav">
+      <button class="nav-item active" data-page="dashboard"><i>⌂</i><span>工作台</span></button>
+      <button class="nav-item" data-page="medicines"><i>▤</i><span>药品档案</span></button>
+      <button class="nav-item" data-page="inventory"><i>□</i><span>库存管理</span></button>
+      <button class="nav-item" data-page="alerts" data-permission="alerts.view"><i>!</i><span>效期预警</span><b id="navAlertCount">0</b></button>
+      <button class="nav-item" data-page="transactions" data-permission="transactions.view"><i>↕</i><span>出入库记录</span></button>
+      <button class="nav-item" data-page="operations" data-permission-any="inventory.count,disposal.create"><i>✓</i><span>盘点与报损</span></button>
+      <button class="nav-item" data-page="approvals" data-permission="users.manage"><i>√</i><span>审核中心</span><b id="approvalCount">0</b></button>
+      <button class="nav-item" data-page="purchases" data-permission="purchase.manage"><i>￥</i><span>采购与供应商</span></button>
+      <button class="nav-item" data-page="prescriptions" data-permission="prescription.create"><i>+</i><span>处方与收费</span></button>
+      <button class="nav-item" data-page="reports" data-permission="reports.export"><i>▥</i><span>报表与备份</span></button>
+      <button class="nav-item" data-page="publicManage" data-permission="public.manage"><i>◈</i><span>对外药品管理</span></button>
+      <button class="nav-item" id="openPublicCatalog"><i>◇</i><span>对外药品展示</span></button>
+      <button class="nav-item" data-page="audit" data-permission="users.manage"><i>◎</i><span>审计日志</span></button>
+      <button class="nav-item" data-page="permissions" data-permission="users.manage"><i>♙</i><span>用户与权限</span></button>
+    </nav>
+    <div class="side-bottom">
+      <div class="clinic-card"><span>今日值班</span><strong>药房管理员</strong><small id="todayText"></small></div>
+      <button class="nav-item" id="resetDemo"><i>↻</i><span>恢复演示数据</span></button>
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <div>
+        <h1 id="pageTitle">工作台</h1>
+        <p id="pageSubtitle">掌握库存状态，优先处理风险事项</p>
+      </div>
+      <div class="header-actions">
+        <div class="theme-picker"><button class="btn theme-toggle" id="themeToggle" type="button">◉ 更换颜色</button><div class="theme-menu" id="themeMenu"></div></div>
+        <label class="user-switch"><span>当前用户</span><select id="currentUser"></select></label>
+        <label class="search-box"><span>⌕</span><input id="globalSearch" placeholder="搜索药品名称 / 编码 / 批号"></label>
+        <button class="btn secondary" data-open="stockModal" data-permission-any="stock.in,stock.out">出入库</button>
+        <button class="btn primary" data-open="medicineModal" data-permission="medicine.create">＋ 录入药品</button>
+        <button class="btn icon-btn" id="logoutBtn" title="退出登录">退出</button>
+      </div>
+    </header>
+
+    <section class="page active" id="dashboard">
+      <div class="welcome">
+        <div>
+          <span class="eyebrow">PHARMACY OVERVIEW</span>
+          <h2>下午好，今天有 <em id="heroActionCount">0</em> 项库存事项需要关注</h2>
+          <p>优先处理临期和库存不足药品，减少损耗并保障诊疗使用。</p>
+        </div>
+        <button class="btn light" data-page-link="alerts">查看待处理事项 →</button>
+      </div>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="two-col">
+        <article class="panel">
+          <div class="panel-head"><div><h3>效期提醒</h3><p>按风险优先级展示临期批次</p></div><button class="text-btn" data-page-link="alerts">查看全部</button></div>
+          <div id="dashboardAlerts"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><div><h3>库存概览</h3><p>药品库存健康度</p></div><button class="text-btn" data-page-link="inventory">库存详情</button></div>
+          <div class="donut-wrap">
+            <div class="donut" id="donut"><div><strong id="healthRate">0%</strong><span>库存充足</span></div></div>
+            <div class="legend" id="inventoryLegend"></div>
+          </div>
+        </article>
+      </div>
+      <article class="panel">
+        <div class="panel-head"><div><h3>最近出入库动态</h3><p>实时追踪每一次库存变动</p></div><button class="text-btn" data-page-link="transactions">查看流水</button></div>
+        <div class="table-wrap"><table><thead><tr><th>操作时间</th><th>药品</th><th>批号</th><th>类型</th><th>数量</th><th>操作人</th></tr></thead><tbody id="recentTransactions"></tbody></table></div>
+      </article>
+    </section>
+
+    <section class="page" id="medicines">
+      <div class="toolbar"><div class="tabs"><button class="tab active">全部药品</button></div><button class="btn primary" data-open="medicineModal" data-permission="medicine.create">＋ 新增药品</button></div>
+      <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>药品信息</th><th>分类</th><th>规格</th><th>库存总量</th><th>批次数</th><th>库存状态</th><th>操作</th></tr></thead><tbody id="medicineTable"></tbody></table></div></article>
+    </section>
+
+    <section class="page" id="inventory">
+      <div class="toolbar">
+        <div class="filter-group"><button class="chip active" data-inventory-filter="all">全部批次</button><button class="chip" data-inventory-filter="low">库存不足</button><button class="chip" data-inventory-filter="expiring">临期批次</button></div>
+        <button class="btn primary" data-open="stockModal" data-permission-any="stock.in,stock.out">＋ 出入库登记</button>
+      </div>
+      <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>药品名称</th><th>批号</th><th>生产日期</th><th>有效期至</th><th>剩余天数</th><th>当前库存</th><th>状态</th></tr></thead><tbody id="inventoryTable"></tbody></table></div></article>
+    </section>
+
+    <section class="page" id="alerts">
+      <div class="alert-banner"><div class="banner-icon">!</div><div><h3>效期管理建议</h3><p>过期药品请立即下架；90 天内到期药品建议优先使用，并按诊所规范处理无法使用的药品。</p></div></div>
+      <div class="toolbar"><div class="filter-group"><button class="chip active" data-alert-filter="all">全部提醒</button><button class="chip" data-alert-filter="expired">已过期</button><button class="chip" data-alert-filter="urgent">30 天内</button><button class="chip" data-alert-filter="soon">31–90 天</button></div></div>
+      <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>风险等级</th><th>药品名称</th><th>批号</th><th>有效期至</th><th>剩余天数</th><th>库存数量</th><th>处理建议</th></tr></thead><tbody id="alertTable"></tbody></table></div></article>
+    </section>
+
+    <section class="page" id="transactions">
+      <div class="toolbar"><div class="tabs"><button class="tab active" data-transaction-filter="all">全部记录</button><button class="tab" data-transaction-filter="in">入库</button><button class="tab" data-transaction-filter="out">出库</button></div><button class="btn primary" data-open="stockModal" data-permission-any="stock.in,stock.out">＋ 新增记录</button></div>
+      <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>操作时间</th><th>药品名称</th><th>批号</th><th>操作类型</th><th>变动数量</th><th>结余库存</th><th>操作人</th><th>备注</th></tr></thead><tbody id="transactionTable"></tbody></table></div></article>
+    </section>
+
+    <section class="page" id="permissions">
+      <div class="permission-banner"><div><h3>用户与权限管理</h3><p>为工作人员分配最少必要权限。永久删除、审核、系统设置、备份恢复和用户管理始终仅限管理员。</p></div><button class="btn primary" data-open="userModal">＋ 新增用户</button></div>
+      <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>用户</th><th>账号类型</th><th>账号状态</th><th>已授予权限</th><th>操作</th></tr></thead><tbody id="userTable"></tbody></table></div></article>
+    </section>
+
+    <section class="page" id="operations">
+      <div class="module-grid">
+        <article class="panel action-card"><h3>库存盘点</h3><p>登记实际库存，系统自动计算账实差异并保留原因。</p><button class="btn primary" data-open="countModal" data-permission="inventory.count">＋ 新建盘点</button></article>
+        <article class="panel action-card"><h3>过期与报损处理</h3><p>对破损、过期或其他不可用药品进行下架登记。</p><button class="btn secondary" data-open="disposalModal" data-permission="disposal.create">＋ 登记报损</button></article>
+      </div>
+      <article class="panel table-panel"><div class="section-caption"><h3>最近处理记录</h3></div><div class="table-wrap"><table><thead><tr><th>时间</th><th>类型</th><th>药品</th><th>批号</th><th>数量 / 差异</th><th>原因</th><th>操作人</th></tr></thead><tbody id="operationTable"></tbody></table></div></article>
+    </section>
+
+    <section class="page" id="approvals">
+      <div class="toolbar"><div><h3>审核中心</h3><p class="subtle">复核库存差异、报损销毁和退药退款</p></div></div>
+      <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>提交时间</th><th>业务类型</th><th>内容</th><th>提交人</th><th>状态</th><th>审核操作</th></tr></thead><tbody id="approvalTable"></tbody></table></div></article>
+    </section>
+
+    <section class="page" id="purchases">
+      <div class="toolbar"><div><h3>采购与供应商</h3><p class="subtle">管理供应商并根据低库存生成补货建议</p></div><div><button class="btn secondary" data-open="supplierModal" data-permission="purchase.manage">＋ 供应商</button> <button class="btn primary" data-open="purchaseModal" data-permission="purchase.manage">＋ 采购入库</button></div></div>
+      <div class="two-col"><article class="panel"><div class="panel-head"><h3>补货建议</h3></div><div id="reorderList"></div></article><article class="panel"><div class="panel-head"><h3>供应商档案与资质</h3></div><div id="supplierList"></div></article></div>
+      <article class="panel table-panel"><div class="section-caption"><h3>采购记录</h3></div><div class="table-wrap"><table><thead><tr><th>日期</th><th>供应商</th><th>药品</th><th>批号</th><th>数量</th><th>进价</th><th>经办人</th></tr></thead><tbody id="purchaseTable"></tbody></table></div></article>
+    </section>
+
+    <section class="page" id="prescriptions">
+      <div class="toolbar"><div><h3>处方与收费</h3><p class="subtle">记录患者发药、处方医生和收款情况</p></div><button class="btn primary" data-open="prescriptionModal" data-permission="prescription.create">＋ 新建处方</button></div>
+      <div class="stats-grid" id="financeStats"></div>
+      <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>时间</th><th>处方编号</th><th>患者</th><th>医生</th><th>药品明细</th><th>应收金额</th><th>状态</th><th>操作</th></tr></thead><tbody id="prescriptionTable"></tbody></table></div></article>
+    </section>
+
+    <section class="page" id="reports">
+      <div class="toolbar"><div><h3>报表与数据安全</h3><p class="subtle">导出业务数据，定期备份并在需要时恢复</p></div><button class="btn secondary" data-open="settingsModal" data-permission="users.manage">提醒设置</button></div>
+      <div class="module-grid">
+        <article class="panel action-card"><h3>库存与临期报表</h3><p>导出当前批次库存、有效期状态和补货建议。</p><button class="btn primary" data-export="inventory">导出库存 CSV</button></article>
+        <article class="panel action-card"><h3>出入库流水</h3><p>导出完整出入库记录，便于核对和存档。</p><button class="btn primary" data-export="transactions">导出流水 CSV</button></article>
+        <article class="panel action-card"><h3>收费统计</h3><p>导出处方收费明细，用于日结和月结。</p><button class="btn primary" data-export="finance">导出收费 CSV</button></article>
+        <article class="panel action-card" data-permission="users.manage"><h3>备份与恢复</h3><p>下载完整 JSON 备份，或导入历史备份恢复数据。</p><button class="btn secondary" data-backup>下载备份</button> <button class="btn secondary" data-restore>恢复备份</button><input id="restoreFile" type="file" accept=".json" hidden></article>
+      </div>
+    </section>
+
+    <section class="page" id="publicManage">
+      <div class="permission-banner"><div><h3>对外药品管理</h3><p>集中设置顾客可见药品和零售价。内部库存、批号与采购信息不会公开。</p></div><button class="btn primary" id="previewPublicCatalog">打开顾客预览</button></div>
+      <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>药品信息</th><th>内部库存</th><th>有效期提示</th><th>对外零售价</th><th>公开状态</th><th>操作</th></tr></thead><tbody id="publicMedicineTable"></tbody></table></div></article>
+    </section>
+
+    <section class="page" id="audit">
+      <div class="toolbar"><div><h3>审计日志</h3><p class="subtle">记录重要操作，方便追踪责任与排查问题</p></div></div>
+      <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>时间</th><th>操作人</th><th>操作类型</th><th>详细内容</th></tr></thead><tbody id="auditTable"></tbody></table></div></article>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="modalBackdrop"></div>
+  <section class="modal" id="medicineModal">
+    <div class="modal-head"><div><h2>录入新药品</h2><p>首次录入时同步登记首批库存</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="medicineForm">
+      <div class="form-grid">
+        <label><span>药品名称 *</span><input name="name" required placeholder="例如：阿莫西林胶囊"></label>
+        <label><span>药品编码 *</span><input name="code" required placeholder="例如：YP-001"></label>
+        <label class="wide barcode-entry"><span>药品条形码</span><div class="barcode-line"><input name="barcode" id="medicineBarcode" placeholder="点击此处后使用扫码枪，或输入条码"><button type="button" class="btn secondary" id="lookupBarcode">⌕ 自动导入</button><button type="button" class="btn secondary" id="startBarcodeScanner">▣ 摄像头扫码</button></div><small>扫描后会优先查询诊所药品库；部署后可连接已授权的药品条码数据库。</small></label>
+        <div class="wide lookup-result" id="lookupResult"></div>
+        <label><span>药品分类 *</span><select name="category" required><option>西药</option><option>中成药</option><option>外用药</option><option>医疗耗材</option><option>其他</option></select></label>
+        <label><span>规格 *</span><input name="spec" required placeholder="例如：0.25g × 24粒"></label>
+        <label><span>库存计量单位 *</span><select name="unit" required><option>盒</option><option>瓶</option><option>支</option><option>片</option><option>包</option><option>袋</option><option>管</option><option>个</option></select></label>
+        <label><span>生产厂家</span><input name="manufacturer" placeholder="厂家名称"></label>
+        <label><span>库存预警值 *</span><input name="minStock" type="number" min="0" value="20" required></label>
+      </div>
+      <div class="form-divider"><span>首批库存信息</span></div>
+      <div class="form-grid">
+        <label><span>批号 *</span><input name="batchNo" required placeholder="例如：202605A01"></label>
+        <label><span>入库数量 *</span><input name="quantity" type="number" min="1" required></label>
+        <label><span>生产日期 *</span><input name="productionDate" type="date" required></label>
+        <label><span>有效期至 *</span><input name="expiryDate" type="date" required></label>
+      </div>
+      <div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary">保存药品</button></div>
+    </form>
+  </section>
+
+  <section class="modal" id="stockModal">
+    <div class="modal-head"><div><h2>出入库登记</h2><p>出库将自动优先扣减最早到期批次</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="stockForm">
+      <div class="segmented"><label><input type="radio" name="type" value="in" checked><span>药品入库</span></label><label><input type="radio" name="type" value="out"><span>药品出库</span></label></div>
+      <div class="form-grid">
+        <label class="wide"><span>选择药品 *</span><select name="medicineId" id="stockMedicine" required></select></label>
+        <label><span>数量 *</span><input name="quantity" type="number" min="1" required></label>
+        <label><span>备注</span><input name="note" placeholder="可选"></label>
+      </div>
+      <div id="batchFields">
+        <div class="form-divider"><span>入库批次信息</span></div>
+        <div class="form-grid">
+          <label><span>批号 *</span><input name="batchNo" placeholder="新批次编号"></label>
+          <label><span>生产日期 *</span><input name="productionDate" type="date"></label>
+          <label><span>有效期至 *</span><input name="expiryDate" type="date"></label>
+        </div>
+      </div>
+      <div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary">确认登记</button></div>
+    </form>
+  </section>
+  <section class="modal" id="userModal">
+    <div class="modal-head"><div><h2 id="userModalTitle">新增普通用户</h2><p>管理员可按岗位分配录入、出库和查看权限</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="userForm">
+      <input type="hidden" name="userId">
+      <div class="form-grid">
+        <label><span>用户姓名 *</span><input name="name" required placeholder="例如：前台护士"></label>
+        <label><span>账号状态</span><select name="active"><option value="true">启用</option><option value="false">停用</option></select></label>
+      </div>
+      <div class="form-divider"><span>授予权限</span></div>
+      <div class="permission-grid" id="permissionOptions"></div>
+      <div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary">保存权限</button></div>
+    </form>
+  </section>
+  <section class="modal" id="countModal">
+    <div class="modal-head"><div><h2>新建库存盘点</h2><p>提交后将以实际数量调整对应批次库存</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="countForm"><div class="form-grid"><label class="wide"><span>选择药品批次 *</span><select name="batchKey" id="countBatch" required></select></label><label><span>实际库存 *</span><input name="actual" type="number" min="0" required></label><label><span>差异原因</span><input name="note" placeholder="例如：月度盘点"></label></div><div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary">确认盘点</button></div></form>
+  </section>
+  <section class="modal" id="disposalModal">
+    <div class="modal-head"><div><h2>登记报损下架</h2><p>适用于过期、破损、召回等不可用药品</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="disposalForm"><div class="form-grid"><label class="wide"><span>选择药品批次 *</span><select name="batchKey" id="disposalBatch" required></select></label><label><span>下架数量 *</span><input name="quantity" type="number" min="1" required></label><label><span>处理原因 *</span><select name="reason"><option>过期下架</option><option>破损报损</option><option>召回处理</option><option>其他原因</option></select></label><label class="wide"><span>备注</span><input name="note" placeholder="可填写销毁方式或补充说明"></label></div><div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary">确认处理</button></div></form>
+  </section>
+  <section class="modal" id="supplierModal">
+    <div class="modal-head"><div><h2>新增供应商</h2><p>维护采购来源与联系方式</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="supplierForm"><div class="form-grid"><label><span>供应商名称 *</span><input name="name" required></label><label><span>联系人</span><input name="contact"></label><label><span>联系电话</span><input name="phone"></label><label><span>资质证号</span><input name="licenseNo"></label><label><span>资质有效期至</span><input name="licenseExpiry" type="date"></label><label><span>备注</span><input name="note"></label></div><div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary">保存供应商</button></div></form>
+  </section>
+  <section class="modal" id="purchaseModal">
+    <div class="modal-head"><div><h2>采购入库</h2><p>采购登记完成后自动增加批次库存</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="purchaseForm"><div class="form-grid"><label><span>供应商 *</span><select name="supplierId" id="purchaseSupplier" required></select></label><label><span>药品 *</span><select name="medicineId" id="purchaseMedicine" required></select></label><label><span>批号 *</span><input name="batchNo" required></label><label><span>采购数量 *</span><input name="quantity" type="number" min="1" required></label><label><span>生产日期 *</span><input name="productionDate" type="date" required></label><label><span>有效期至 *</span><input name="expiryDate" type="date" required></label><label><span>采购总价</span><input name="cost" type="number" min="0" step="0.01" value="0"></label></div><div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary">采购并入库</button></div></form>
+  </section>
+  <section class="modal" id="prescriptionModal">
+    <div class="modal-head"><div><h2>新建处方收费</h2><p>保存后自动按最早到期批次扣减库存</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="prescriptionForm"><div class="form-grid"><label><span>患者姓名 *</span><input name="patient" required></label><label><span>开方医生 *</span><input name="doctor" required></label><label><span>支付方式</span><select name="payment"><option>现金</option><option>微信</option><option>支付宝</option><option>其他</option></select></label></div><select id="prescriptionMedicine" hidden></select><div class="form-divider"><span>处方药品明细</span></div><div id="prescriptionItems"></div><button type="button" class="btn secondary" id="addPrescriptionItem">＋ 添加药品</button><div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary">收费并发药</button></div></form>
+  </section>
+  <section class="modal" id="editMedicineModal">
+    <div class="modal-head"><div><h2>编辑药品档案</h2><p>维护药品单位、条码、售价和提醒策略</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="editMedicineForm"><input type="hidden" name="medicineId"><div class="form-grid"><label><span>药品名称 *</span><input name="name" required></label><label><span>药品编码 *</span><input name="code" required></label><label><span>规格 *</span><input name="spec" required></label><label><span>采购单位</span><input name="unit" placeholder="盒 / 瓶 / 支 / 包"></label><label><span>最小发药单位</span><input name="dispenseUnit" placeholder="粒 / 支 / 片"></label><label><span>单位换算</span><input name="conversion" type="number" min="1" placeholder="1 盒包含多少最小单位"></label><label><span>库位</span><input name="location" placeholder="例如：药房 A-03 / 冷藏柜"></label><label><span>条形码</span><input name="barcode" placeholder="支持扫码枪输入"></label><label><span>销售单价</span><input name="salePrice" type="number" min="0" step="0.01"></label><label><span>对外展示</span><select name="publicVisible"><option value="true">公开展示</option><option value="false">仅内部可见</option></select></label><label><span>低库存预警值</span><input name="minStock" type="number" min="0"></label><label><span>提前提醒天数</span><input name="warningDays" type="number" min="1"></label></div><div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary">保存修改</button></div></form>
+  </section>
+  <section class="modal" id="settingsModal">
+    <div class="modal-head"><div><h2>提醒设置</h2><p>设置诊所默认的药品有效期提醒规则</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="settingsForm"><div class="form-grid"><label><span>默认提前提醒天数</span><input name="expiryWarningDays" type="number" min="1" required></label><label><span>每日备份提示</span><select name="backupReminder"><option value="true">开启</option><option value="false">关闭</option></select></label></div><div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary">保存设置</button></div></form>
+  </section>
+  <section class="modal" id="publicMedicineModal">
+    <div class="modal-head"><div><h2>设置对外药品</h2><p>顾客窗口仅展示必要信息，不会显示精确库存数量</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="publicMedicineForm"><input type="hidden" name="medicineId"><div class="form-grid"><label class="wide"><span>药品</span><input name="medicineName" disabled></label><label><span>对外零售价 *</span><input name="salePrice" type="number" min="0" step="0.01" required></label><label><span>是否公开</span><select name="publicVisible"><option value="true">公开展示</option><option value="false">仅内部可见</option></select></label></div><div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary">保存设置</button></div></form>
+  </section>
+  <section class="modal scanner-modal" id="scannerModal">
+    <div class="modal-head"><div><h2>扫描药品条形码</h2><p>将药品包装上的条形码对准摄像头</p></div><button class="close-btn" id="stopBarcodeScanner" type="button">×</button></div>
+    <video id="barcodeVideo" autoplay playsinline></video>
+    <div class="scanner-guide"><span></span></div>
+    <p class="scanner-status" id="scannerStatus">正在启动摄像头...</p>
+  </section>
+  <section class="login-screen" id="loginScreen">
+    <form class="login-card" id="loginForm"><div class="brand-mark">医</div><h2>可瑞康诊所</h2><p>药房管理系统</p><label><span>登录账号</span><select name="userId" id="loginUser"></select></label><label><span>密码</span><input name="password" type="password" placeholder="演示密码：123456" required></label><button class="btn primary">登录系统</button><small>本地演示版本。正式部署时请接入服务端账号认证。</small></form>
+  </section>
+  <div class="toast" id="toast"></div>
+  <script src="app.js"></script>
+  <script src="permissions.js"></script>
+  <script src="extensions.js"></script>
+  <script src="advanced.js"></script>
+  <script src="themes.js"></script>
+  <script src="security-policy.js"></script>
+  <script src="scanner.js"></script>
+  <script src="barcode-lookup.js"></script>
+</body>
+</html>
