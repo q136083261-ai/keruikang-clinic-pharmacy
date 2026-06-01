@@ -253,7 +253,7 @@
     <p class="scanner-status" id="scannerStatus">正在启动摄像头...</p>
   </section>
   <section class="login-screen" id="loginScreen">
-    <form class="login-card" id="loginForm"><div class="brand-mark">医</div><h2>可瑞康诊所</h2><p>药房管理系统</p><label><span>登录账号</span><select name="userId" id="loginUser"></select></label><label><span>密码</span><input name="password" type="password" placeholder="演示密码：123456" required></label><button class="btn primary">登录系统</button><small>本地演示版本。正式部署时请接入服务端账号认证。</small></form>
+    <form class="login-card" id="loginForm"><div class="brand-mark">医</div><h2>可瑞康诊所</h2><p>药房管理系统</p><select name="userId" id="loginUser" hidden></select><label><span>登录邮箱</span><input name="email" type="email" placeholder="请输入诊所账号邮箱" autocomplete="username" required></label><label><span>密码</span><input name="password" type="password" placeholder="请输入密码" autocomplete="current-password" required></label><button class="btn primary">登录系统</button><small>账号由诊所管理员创建。库存数据将安全同步至云端。</small></form>
   </section>
   <div class="toast" id="toast"></div>
   <script src="app.js"></script>
@@ -264,5 +264,8 @@
   <script src="security-policy.js"></script>
   <script src="scanner.js"></script>
   <script src="barcode-lookup.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="cloud-sync.js"></script>
 </body>
 </html>
