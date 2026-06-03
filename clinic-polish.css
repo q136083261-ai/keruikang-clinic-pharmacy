@@ -1,0 +1,280 @@
+/* Visual polish for Keruikang Clinic. Loaded last so it can refine the prototype safely. */
+:root{
+  --bg:#f3f8fc;
+  --panel:#ffffff;
+  --text:#1f3344;
+  --muted:#718797;
+  --line:#dfeaf2;
+  --green:#1e96d4;
+  --green2:#e7f6fd;
+  --orange:#f2a33b;
+  --red:#e35d67;
+  --blue:#5aa9e6;
+  --shadow:0 18px 45px rgba(46,105,140,.11);
+  --soft-shadow:0 8px 22px rgba(46,105,140,.08);
+}
+body{
+  background:
+    radial-gradient(circle at 18% -10%,rgba(90,190,235,.20),transparent 32%),
+    linear-gradient(180deg,#f7fbfe 0,#edf6fb 100%);
+  color:var(--text);
+}
+.sidebar{
+  width:238px;
+  padding:18px 12px;
+  background:linear-gradient(180deg,#176f9f 0,#0f5179 100%)!important;
+  box-shadow:10px 0 28px rgba(24,89,126,.13);
+}
+.brand{
+  margin:2px 4px 18px;
+  padding:14px 12px;
+  border-radius:18px;
+  background:rgba(255,255,255,.12);
+}
+.brand-mark{
+  width:42px;
+  height:42px;
+  border-radius:14px;
+  background:#fff!important;
+  color:#1e96d4!important;
+  box-shadow:0 10px 22px rgba(15,72,105,.18);
+}
+.brand strong{font-size:17px}.brand span{opacity:.82}
+.nav-item{
+  margin:4px 0;
+  padding:12px 13px;
+  border-radius:13px;
+  color:#d7effb;
+  transition:background .16s,transform .16s,color .16s;
+}
+.nav-item:hover,.nav-item.active{
+  background:rgba(255,255,255,.18)!important;
+  color:#fff;
+  transform:translateX(2px);
+}
+.nav-item i{
+  display:grid;
+  width:25px;
+  height:25px;
+  place-items:center;
+  border-radius:9px;
+  background:rgba(255,255,255,.12);
+  font-size:14px;
+}
+.nav-item.active i{background:#fff;color:#197faf}
+.clinic-card{
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:16px;
+  background:rgba(255,255,255,.11);
+}
+main{margin-left:238px;padding:24px 32px 42px}
+header{
+  position:sticky;
+  top:0;
+  z-index:5;
+  margin:-24px -32px 22px;
+  padding:22px 32px 16px;
+  background:rgba(247,251,254,.88);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(220,235,244,.8);
+}
+h1{font-size:27px;letter-spacing:.3px}
+.header-actions{gap:9px;flex-wrap:wrap;justify-content:flex-end}
+.btn{
+  border-radius:12px;
+  padding:10px 16px;
+  box-shadow:none;
+  transition:transform .16s,box-shadow .16s,background .16s;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:var(--soft-shadow)}
+.primary{
+  background:linear-gradient(135deg,#1e96d4,#45b7e8)!important;
+  color:#fff;
+}
+.secondary,.theme-toggle{
+  background:#e8f6fd!important;
+  color:#167fb7!important;
+}
+.ghost{background:#f0f5f8;color:#6d8190}
+.search-box,.user-switch{
+  border-color:#dbeaf3;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:var(--soft-shadow);
+}
+.search-box input{padding:10px 6px}
+.welcome{
+  position:relative;
+  overflow:hidden;
+  min-height:174px;
+  border-radius:24px;
+  background:
+    radial-gradient(circle at 85% 8%,rgba(255,255,255,.35),transparent 26%),
+    linear-gradient(135deg,#1f91cb 0,#67c3ec 100%)!important;
+  box-shadow:0 22px 55px rgba(44,131,181,.22);
+}
+.welcome:after{
+  position:absolute;
+  right:-44px;
+  bottom:-60px;
+  width:220px;
+  height:220px;
+  border-radius:50%;
+  background:rgba(255,255,255,.16);
+  content:"";
+}
+.welcome h2{font-size:26px}.welcome p{font-size:13px}.eyebrow{font-weight:700}
+.quick-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  margin:17px 0;
+}
+.quick-card{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  padding:16px;
+  border:1px solid #e3eef5;
+  border-radius:18px;
+  background:#fff;
+  color:var(--text);
+  text-align:left;
+  box-shadow:var(--soft-shadow);
+}
+.quick-card i{
+  display:grid;
+  width:42px;
+  height:42px;
+  place-items:center;
+  border-radius:14px;
+  background:#e7f6fd;
+  color:#1684bd;
+  font-style:normal;
+  font-size:18px;
+}
+.quick-card strong,.quick-card span{display:block}.quick-card span{color:var(--muted);font-size:12px}
+.stats-grid{gap:14px}.stat-card,.panel{
+  border-color:#e4eef5;
+  border-radius:18px;
+  box-shadow:var(--soft-shadow);
+}
+.stat-card{
+  padding:18px;
+  background:linear-gradient(180deg,#fff 0,#fbfdff 100%);
+}
+.stat-icon{width:36px;height:36px;border-radius:13px}
+.stat-card strong{font-size:28px}
+.panel{padding:19px}.table-panel{padding:0}
+.panel-head h3,.toolbar h3,.section-caption h3{font-size:17px}
+th{
+  padding:13px 14px;
+  background:#f4f9fc;
+  color:#718695;
+  letter-spacing:.3px;
+}
+td{padding:13px 14px}
+tbody tr:hover{background:#f8fcff}
+.drug-name strong{font-size:13px}
+.risk{
+  border-radius:999px;
+  padding:4px 9px;
+}
+.risk-green{background:#e5f6fd!important;color:#157dad!important}
+.risk-orange{background:#fff4df;color:#b66f16}
+.risk-red{background:#fdecef;color:#c94351}
+.chip,.tab{
+  border-radius:999px;
+  background:#eef4f7;
+}
+.chip.active,.tab.active{
+  background:#e6f6fd!important;
+  color:#1684bd!important;
+}
+.modal{
+  border:1px solid #e4eef5;
+  border-radius:22px;
+  box-shadow:0 30px 80px rgba(38,82,108,.23);
+}
+.modal-head{
+  position:sticky;
+  top:-22px;
+  z-index:2;
+  margin:-22px -22px 18px;
+  padding:20px 22px 15px;
+  border-bottom:1px solid #edf3f7;
+  background:#fff;
+  border-radius:22px 22px 0 0;
+}
+.form-grid{gap:14px}
+.form-grid input,.form-grid select,.login-card input,.login-card select{
+  min-height:42px;
+  border-color:#dbe8f0;
+  border-radius:12px;
+  background:#fbfdff;
+}
+.form-grid input:focus,.form-grid select:focus,.search-box:focus-within,.login-card input:focus{
+  outline:2px solid rgba(30,150,212,.18);
+  border-color:#78bee4;
+}
+.barcode-line input{background:#fff}
+.lookup-success,.lookup-missing,.lookup-loading{
+  border-radius:14px!important;
+  padding:12px 14px!important;
+}
+.login-screen{
+  background:
+    radial-gradient(circle at 28% 20%,rgba(255,255,255,.34),transparent 28%),
+    linear-gradient(135deg,#1b7fb4,#68c7ef)!important;
+}
+.login-card{
+  width:min(390px,calc(100vw - 30px));
+  border:1px solid rgba(255,255,255,.75);
+  border-radius:24px;
+  box-shadow:0 28px 80px rgba(23,91,128,.28);
+}
+.login-card .brand-mark{margin:auto auto 12px}
+.login-card h2,.login-card p{text-align:center}
+.cloud-sync-status{bottom:18px;right:18px;border-radius:999px}
+.catalog-header{
+  background:linear-gradient(135deg,#176f9f,#0f5179)!important;
+}
+.catalog-main{max-width:1180px}
+.catalog-hero{
+  border-radius:26px;
+  background:
+    radial-gradient(circle at 88% 0,rgba(255,255,255,.32),transparent 24%),
+    linear-gradient(135deg,#1f91cb,#68c7ef)!important;
+  box-shadow:0 22px 55px rgba(44,131,181,.18);
+}
+.catalog-card{
+  border-radius:18px;
+  box-shadow:var(--soft-shadow);
+  transition:transform .16s,box-shadow .16s;
+}
+.catalog-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.catalog-price{color:#1e96d4!important}
+@media(max-width:1120px){
+  .quick-grid{grid-template-columns:repeat(2,1fr)}
+  header{position:static}
+}
+@media(max-width:760px){
+  .sidebar{
+    width:72px;
+    padding:14px 8px;
+  }
+  main{margin-left:72px;padding:16px 12px 28px}
+  header{margin:-16px -12px 16px;padding:16px 12px}
+  .brand{padding:8px;margin:0 0 14px}.brand-mark{width:40px;height:40px}
+  .nav-item{justify-content:center;padding:11px 7px}.nav-item i{width:30px;height:30px}
+  .welcome{padding:21px;min-height:150px}
+  .welcome h2{font-size:20px}
+  .quick-grid{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr}
+  .header-actions{justify-content:flex-start}
+  .header-actions .btn,.theme-picker,.user-switch{width:100%}
+  .theme-toggle,.user-switch select{width:100%}
+  .modal{width:calc(100vw - 18px);padding:18px}
+  .modal-head{margin:-18px -18px 16px;padding:18px}
+  .donut-wrap{display:block;text-align:center}.legend{text-align:left}
+}

@@ -6,6 +6,7 @@
   <title>可瑞康诊所 · 药房管理</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="theme-red.css">
+  <link rel="stylesheet" href="clinic-polish.css">
 </head>
 <body>
   <aside class="sidebar">
@@ -61,6 +62,12 @@
         <button class="btn light" data-page-link="alerts">查看待处理事项 →</button>
       </div>
       <div class="stats-grid" id="statsGrid"></div>
+      <div class="quick-grid">
+        <button class="quick-card" data-open="medicineModal" data-permission="medicine.create"><i>＋</i><div><strong>扫码录入药品</strong><span>新药建档与首批库存</span></div></button>
+        <button class="quick-card" data-open="stockModal" data-permission-any="stock.in,stock.out"><i>↕</i><div><strong>快速出入库</strong><span>入库、发药、退回登记</span></div></button>
+        <button class="quick-card" data-page-link="alerts" data-permission="alerts.view"><i>!</i><div><strong>处理效期预警</strong><span>过期和临期优先查看</span></div></button>
+        <button class="quick-card" data-page-link="publicManage" data-permission="public.manage"><i>◇</i><div><strong>对外药品展示</strong><span>价格与公开状态管理</span></div></button>
+      </div>
       <div class="two-col">
         <article class="panel">
           <div class="panel-head"><div><h3>效期提醒</h3><p>按风险优先级展示临期批次</p></div><button class="text-btn" data-page-link="alerts">查看全部</button></div>
