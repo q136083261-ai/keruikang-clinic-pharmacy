@@ -162,12 +162,13 @@
       <div class="form-grid">
         <label><span>药品名称 *</span><input name="name" required placeholder="例如：阿莫西林胶囊"></label>
         <label><span>药品编码 *</span><input name="code" required placeholder="例如：YP-001"></label>
-        <label class="wide barcode-entry"><span>药品条形码</span><div class="barcode-line"><input name="barcode" id="medicineBarcode" placeholder="点击此处后使用扫码枪，或输入条码"><button type="button" class="btn secondary" id="lookupBarcode">⌕ 自动导入</button><button type="button" class="btn secondary" id="startBarcodeScanner">▣ 摄像头扫码</button></div><small>扫描后会优先查询诊所药品库；部署后可连接已授权的药品条码数据库。</small></label>
+        <label class="wide barcode-entry"><span>药品条形码 / GS1 批次码</span><div class="barcode-line"><input class="barcode-scan-input" name="barcode" id="medicineBarcode" placeholder="支持扫码枪、药品条码、GS1/UDI组合码"><button type="button" class="btn secondary" id="lookupBarcode">⌕ 自动适配</button><button type="button" class="btn secondary" id="startBarcodeScanner" data-scan-target="medicineBarcode">▣ 摄像头扫码</button></div><small>可解析药品条码、批号 LOT、生产日期、有效期、数量。外部数据库资料缺失时仍可自动填入批次信息。</small></label>
         <div class="wide lookup-result" id="lookupResult"></div>
         <label><span>药品分类 *</span><select name="category" required><option>西药</option><option>中成药</option><option>外用药</option><option>医疗耗材</option><option>其他</option></select></label>
         <label><span>规格 *</span><input name="spec" required placeholder="例如：0.25g × 24粒"></label>
         <label><span>库存计量单位 *</span><select name="unit" required><option>盒</option><option>瓶</option><option>支</option><option>片</option><option>包</option><option>袋</option><option>管</option><option>个</option></select></label>
         <label><span>生产厂家</span><input name="manufacturer" placeholder="厂家名称"></label>
+        <label><span>对外零售价</span><input name="salePrice" type="number" min="0" step="0.01" placeholder="可选，扫码匹配后自动带入"></label>
         <label><span>库存预警值 *</span><input name="minStock" type="number" min="0" value="20" required></label>
       </div>
       <div class="form-divider"><span>首批库存信息</span></div>
@@ -196,6 +197,8 @@
           <label><span>批号 *</span><input name="batchNo" placeholder="新批次编号"></label>
           <label><span>生产日期 *</span><input name="productionDate" type="date"></label>
           <label><span>有效期至 *</span><input name="expiryDate" type="date"></label>
+          <label class="wide barcode-entry"><span>入库条形码 / GS1 批次码</span><div class="barcode-line"><input class="barcode-scan-input" name="stockBarcode" id="stockBarcode" placeholder="扫描已有药品的新批次码"><button type="button" class="btn secondary" id="lookupStockBarcode">⌕ 适配入库</button><button type="button" class="btn secondary" data-scan-target="stockBarcode">▣ 摄像头扫码</button></div><small>会自动选择已建档药品，并填入批号、生产日期、有效期和数量。</small></label>
+          <div class="wide lookup-result" id="stockLookupResult"></div>
         </div>
       </div>
       <div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary">确认登记</button></div>
