@@ -58,6 +58,24 @@ function setField(form,name,value){
   }
   field.value=String(value);
 }
+function requiredMissing(form,names){return names.filter(name=>!String(form.elements[name]?.value||"").trim())}
+function scanStatus(form,type,item,parsed){
+  const drugMissing=type==="medicine"?requiredMissing(form,["name","code","spec","unit"]):[];
+  const batchMissing=requiredMissing(form,["batchNo","productionDate","expiryDate","quantity"]);
+  const hasDrug=item?.name||type==="stock";
+  const hasBatch=parsed.batchNo||parsed.productionDate||parsed.expiryDate;
+  if(!hasDrug&&!hasBatch)return {state:"missing",title:"无法识别",detail:"未匹配到药品资料，也没有解析到批号或效期。请手动补录后重新核对。"};
+  if(drugMissing.length||batchMissing.length)return {state:"warn",title:"需要人工补全",detail:`缺少：${[...drugMissing,...batchMissing].map(labelFor).join("、")}。补全并核对后可以保存。`};
+  return {state:"success",title:"完整识别",detail:"药品资料和批次关键字段已填入，请按包装再核对一次。"};
+}
+function labelFor(name){
+  return ({name:"药品名称",code:"药品编码",spec:"规格",unit:"单位",batchNo:"批号",productionDate:"生产日期",expiryDate:"有效期",quantity:"数量"}[name]||name)
+}
+function setScanState(form,resultBox,status){
+  form.dataset.scanState=status.state;
+  resultBox.dataset.scanState=status.state;
+  return status;
+}
 function fillMedicineForm(item,parsed,source){
   const m={...item};
   setField(medicineEntryForm,"barcode",parsed.gtin||parsed.barcode||medicineBarcodeInput.value);
@@ -73,7 +91,9 @@ function fillMedicineForm(item,parsed,source){
   setField(medicineEntryForm,"productionDate",parsed.productionDate||m.productionDate);
   setField(medicineEntryForm,"expiryDate",parsed.expiryDate||m.expiryDate);
   setField(medicineEntryForm,"quantity",parsed.quantity||m.quantity);
-  lookupResult.innerHTML=resultHtml("lookup-success","已适配药品资料",[
+  const status=setScanState(medicineEntryForm,lookupResult,scanStatus(medicineEntryForm,"medicine",m,parsed));
+  lookupResult.innerHTML=resultHtml(status.state==="success"?"lookup-success":status.state==="warn"?"lookup-warning":"lookup-missing",`${status.title}：已适配药品资料`,[
+    status.detail,
     `${m.name||"待补药品名称"} · ${m.spec||"待补规格"} · ${m.manufacturer||"待补厂家"}`,
     `条码 ${parsed.gtin||parsed.barcode||"-"}${parsed.batchNo?` · 批号 ${parsed.batchNo}`:""}${parsed.expiryDate?` · 有效期 ${parsed.expiryDate}`:""}`,
     `来源：${source}。保存前请核对包装、批号和有效期。`
@@ -87,7 +107,9 @@ function fillStockForm(item,parsed,source){
   setField(stockEntryForm,"productionDate",parsed.productionDate||item?.productionDate);
   setField(stockEntryForm,"expiryDate",parsed.expiryDate||item?.expiryDate);
   setField(stockEntryForm,"quantity",parsed.quantity||item?.quantity);
-  stockLookupResult.innerHTML=resultHtml(medicine?"lookup-success":"lookup-missing",medicine?"已适配入库批次":"已解析批次，但本药品未建档",[
+  const status=setScanState(stockEntryForm,stockLookupResult,scanStatus(stockEntryForm,"stock",medicine?item:null,parsed));
+  stockLookupResult.innerHTML=resultHtml(medicine&&status.state==="success"?"lookup-success":medicine?"lookup-warning":"lookup-missing",medicine?`${status.title}：已适配入库批次`:"已解析批次，但本药品未建档",[
+    status.detail,
     medicine?`${medicine.name} · ${medicine.spec}`:"请先在“录入新药品”中保存药品档案，再回到入库登记。",
     `条码 ${barcode||"-"}${parsed.batchNo?` · 批号 ${parsed.batchNo}`:""}${parsed.expiryDate?` · 有效期 ${parsed.expiryDate}`:""}`,
     `来源：${source}`
@@ -114,15 +136,39 @@ async function lookupBarcode(target="medicine"){
   const item=local||await externalLookup(barcode)||demoBarcodeCatalog[barcode]||{};
   if(target==="stock"){fillStockForm(item,parsed,local?"诊所已有药品库":item.name?"药品资料库":"条码解析");return}
   if(item.name||parsed.batchNo||parsed.expiryDate){fillMedicineForm(item,parsed,local?"诊所已有药品库":item.name?"药品资料库":"条码解析");return}
+  setScanState(form,result,{state:"missing"});
   result.innerHTML=resultHtml("lookup-missing","暂未匹配到药品资料",["条码已保留，可手动填写；如包装上是组合码，系统会尽量解析批号和有效期。"]);
+}
+function validateScanBeforeSave(form,type){
+  const barcode=type==="stock"?stockBarcodeInput.value.trim():medicineBarcodeInput.value.trim();
+  if(!barcode)return true;
+  const confirmed=form.elements[type==="stock"?"stockScanConfirmed":"scanConfirmed"]?.checked;
+  const status=form.dataset.scanState||"";
+  const missing=type==="medicine"?requiredMissing(form,["name","code","spec","unit","batchNo","productionDate","expiryDate","quantity"]):requiredMissing(form,["medicineId","batchNo","productionDate","expiryDate","quantity"]);
+  if(status==="missing")return toast("扫码未识别成功，请补全资料后重新点击自动适配"),false;
+  if(missing.length)return toast("扫码资料未完整，请补全："+missing.map(labelFor).join("、")),false;
+  if(!confirmed)return toast("请先勾选已核对药品包装和批次信息"),false;
+  if(new Date(form.elements.expiryDate.value)<=new Date(form.elements.productionDate.value))return toast("有效期必须晚于生产日期"),false;
+  return true;
 }
 document.getElementById("lookupBarcode").onclick=()=>lookupBarcode("medicine");
 document.getElementById("lookupStockBarcode").onclick=()=>lookupBarcode("stock");
 [medicineBarcodeInput,stockBarcodeInput].forEach(input=>input?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();lookupBarcode(input.id==="stockBarcode"?"stock":"medicine")}}));
-medicineBarcodeInput.addEventListener("input",()=>{lookupResult.innerHTML=""});
-stockBarcodeInput.addEventListener("input",()=>{stockLookupResult.innerHTML=""});
+medicineBarcodeInput.addEventListener("input",()=>{lookupResult.innerHTML="";medicineEntryForm.dataset.scanState="";medicineEntryForm.elements.scanConfirmed.checked=false});
+stockBarcodeInput.addEventListener("input",()=>{stockLookupResult.innerHTML="";stockEntryForm.dataset.scanState="";stockEntryForm.elements.stockScanConfirmed.checked=false});
 window.handleScannedBarcode=(value,targetId)=>{
   const input=document.getElementById(targetId)||medicineBarcodeInput;
   input.value=value;input.dispatchEvent(new Event("input",{bubbles:true}));
   lookupBarcode(input.id==="stockBarcode"?"stock":"medicine");
+};
+const medicineSubmitWithScan=medicineEntryForm.onsubmit;
+medicineEntryForm.onsubmit=function(e){
+  if(!validateScanBeforeSave(medicineEntryForm,"medicine")){e.preventDefault();return}
+  medicineSubmitWithScan.call(this,e);
+};
+const stockSubmitWithScan=stockEntryForm.onsubmit;
+stockEntryForm.onsubmit=function(e){
+  const type=new FormData(stockEntryForm).get("type");
+  if(type==="in"&&!validateScanBeforeSave(stockEntryForm,"stock")){e.preventDefault();return}
+  stockSubmitWithScan.call(this,e);
 };
