@@ -134,8 +134,8 @@ async function lookupBarcode(target="medicine"){
   result.innerHTML='<div class="lookup-loading">正在解析条码并查询药品资料...</div>';
   const local=data.medicines.find(m=>m.barcode===barcode);
   const item=local||await externalLookup(barcode)||demoBarcodeCatalog[barcode]||{};
-  if(target==="stock"){fillStockForm(item,parsed,local?"诊所已有药品库":item.name?"药品资料库":"条码解析");return}
-  if(item.name||parsed.batchNo||parsed.expiryDate){fillMedicineForm(item,parsed,local?"诊所已有药品库":item.name?"药品资料库":"条码解析");return}
+  if(target==="stock"){fillStockForm(item,parsed,local?"诊所已有药品库":item.name?"药品资料库":"条码解析");window.dispatchEvent(new CustomEvent("clinic:barcode-lookup-complete"));return}
+  if(item.name||parsed.batchNo||parsed.expiryDate){fillMedicineForm(item,parsed,local?"诊所已有药品库":item.name?"药品资料库":"条码解析");window.dispatchEvent(new CustomEvent("clinic:barcode-lookup-complete"));return}
   setScanState(form,result,{state:"missing"});
   result.innerHTML=resultHtml("lookup-missing","暂未匹配到药品资料",["条码已保留，可手动填写；如包装上是组合码，系统会尽量解析批号和有效期。"]);
 }
