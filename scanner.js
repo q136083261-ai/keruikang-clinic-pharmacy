@@ -13,7 +13,6 @@ async function startBarcodeScanner(targetId="medicineBarcode"){
   }catch{scannerToast("摄像头无法使用，请检查授权或使用 USB 扫码枪");stopBarcodeScanner()}
 }
 document.addEventListener("click",e=>{const button=e.target.closest("[data-scan-target]");if(button)startBarcodeScanner(button.dataset.scanTarget)});
-document.getElementById("startBarcodeScanner").onclick=()=>startBarcodeScanner("medicineBarcode");
 document.getElementById("stopBarcodeScanner").onclick=stopBarcodeScanner;
 document.getElementById("modalBackdrop").addEventListener("click",()=>{if(scannerModal.classList.contains("open"))stopBarcodeScanner()});
 document.addEventListener("keydown",e=>{const input=e.target.closest(".barcode-scan-input");if(input&&e.key==="Enter"){e.preventDefault();scannerToast("条码已录入："+input.value)}});

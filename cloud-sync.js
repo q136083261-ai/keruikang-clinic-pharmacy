@@ -1,14 +1,5 @@
 (function () {
   const config = window.CLINIC_SUPABASE;
-  if (!config || !window.supabase) return;
-
-  const client = window.supabase.createClient(config.url, config.publishableKey);
-  const originalSave = save;
-  let syncing = false;
-  let syncTimer = 0;
-  let remoteMedicineIds = new Set();
-  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
   function status(text, kind = "idle") {
     let node = document.getElementById("cloudSyncStatus");
     if (!node) {
@@ -20,6 +11,26 @@
     node.className = "cloud-sync-status " + kind;
     node.textContent = text;
   }
+
+  if (!config || !window.supabase) {
+    status("云端登录组件加载失败", "error");
+    const loginForm = document.getElementById("loginForm");
+    if (loginForm) {
+      loginForm.onsubmit = function (event) {
+        event.preventDefault();
+        toast("登录组件未加载，请刷新页面；若仍失败，请检查网络或 CDN 访问。");
+      };
+    }
+    return;
+  }
+
+  window.CLINIC_CLOUD_AUTH_READY = true;
+  const client = window.supabase.createClient(config.url, config.publishableKey);
+  const originalSave = save;
+  let syncing = false;
+  let syncTimer = 0;
+  let remoteMedicineIds = new Set();
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
   function cloudUser(profile, email) {
     const role = profile?.role || "viewer";
