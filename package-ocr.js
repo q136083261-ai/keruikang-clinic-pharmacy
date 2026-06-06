@@ -55,13 +55,10 @@
     return String(text || "")
       .replace(/\r/g, "\n")
       .replace(/[：﹕]/g, ":")
-      .replace(/[，]/g, ",")
-      .replace(/[。]/g, ".")
-      .replace(/[×Ｘ]/g, "x")
-      .replace(/[／]/g, "/")
-      .replace(/[－]/g, "-")
-      .replace(/[【［〔]/g, "[")
-      .replace(/[】］〕]/g, "]")
+      .replace(/[，、]/g, ",")
+      .replace(/[×✕＊*]/g, "x")
+      .replace(/[【〔［]/g, "[")
+      .replace(/[】〕］]/g, "]")
       .replace(/[ \t]+/g, " ")
       .trim();
   }
@@ -69,20 +66,23 @@
   function normalizeOcrDigits(value) {
     return String(value || "")
       .replace(/[０-９]/g, char => String.fromCharCode(char.charCodeAt(0) - 65248))
-      .replace(/[Oo]/g, "0")
+      .replace(/[OoQq]/g, "0")
+      .replace(/[CcGg]/g, "0")
       .replace(/[Il|]/g, "1")
+      .replace(/[Ss]/g, "5")
+      .replace(/[Zz]/g, "2")
       .replace(/\s+/g, "");
   }
 
   function parseDate(value, preferEndOfMonth = false) {
     if (!value) return "";
-    const source = String(value);
-    const chinese = source.match(/([12]\d{3})\s*年\s*(\d{1,2})\s*月(?:\s*(\d{1,2})\s*日?)?/);
+    const source = normalizeOcrDigits(String(value));
+    const chinese = source.match(/(20\d{2})\D{0,4}(\d{1,2})\D{0,4}(\d{1,2})?/);
     if (chinese) {
       const day = (chinese[3] || (preferEndOfMonth ? "28" : "01")).padStart(2, "0");
       return `${chinese[1]}-${chinese[2].padStart(2, "0")}-${day}`;
     }
-    const digits = normalizeOcrDigits(source).replace(/\D/g, "");
+    const digits = source.replace(/\D/g, "");
     if (digits.length >= 8) return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
     if (digits.length === 6) return `20${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4, 6)}`;
     return "";
@@ -108,18 +108,43 @@
     if (/瓶/.test(specText)) return "瓶";
     if (/袋/.test(specText)) return "袋";
     if (/包/.test(specText)) return "包";
+    if (/盒/.test(specText)) return "盒";
     return "盒";
+  }
+
+  function extractDateCandidates(text) {
+    const normalized = normalizeOcrDigits(text);
+    return [...normalized.matchAll(/(20\d{2})\D{0,8}(\d{1,2})\D{0,8}(\d{1,2})?/g)]
+      .map(match => {
+        const year = Number(match[1]);
+        const month = Number(match[2]);
+        const day = match[3] ? Number(match[3]) : null;
+        if (year < 2000 || year > 2099 || month < 1 || month > 12 || (day !== null && (day < 1 || day > 31))) return null;
+        return {
+          value: `${year}-${String(month).padStart(2, "0")}-${String(day || 28).padStart(2, "0")}`,
+          dayKnown: day !== null
+        };
+      })
+      .filter(Boolean);
   }
 
   function parseLabeledBatchAndDates(text) {
     const compact = text.split(/\n+/).map(line => line.trim()).filter(Boolean).join(" ");
-    const block = compact.match(/产品批号\D*([A-Za-z0-9\s.-]{3,30})\D+生产日期\D*([12]\d{3}\s*年?\s*\d{1,2}\s*月?\s*\d{0,2}\s*日?)\D+有效期至\D*([12]\d{3}\s*年?\s*\d{1,2}\s*月?\s*\d{0,2}\s*日?)/);
-    const batchNo = block?.[1] ? normalizeOcrDigits(block[1]).replace(/[^A-Z0-9.-]/gi, "") : "";
-    return {
-      batchNo,
-      productionDate: parseDate(block?.[2] || firstMatch(compact, [/生产日期\D*([12]\d{3}[^;；\n]{0,16})/])),
-      expiryDate: parseDate(block?.[3] || firstMatch(compact, [/(?:有效期至|有效期|失效期)\D*([12]\d{3}[^;；\n]{0,16})/]), true)
-    };
+    const batchRaw = firstMatch(compact, [
+      /(?:产品批号|生产批号|批号|LOT|Lot)\D*([A-Za-z0-9\s.-]{3,30})/
+    ]);
+    const batchNo = normalizeOcrDigits(batchRaw).replace(/[^A-Z0-9.-]/gi, "").slice(0, 30);
+    const productionRaw = firstMatch(compact, [
+      /(?:生产日期|生产日|产日|生日)\D*(20\d{2}[^;；\n]{0,18})/,
+      /(?:MFG|MFD)\D*(20\d{2}[^;；\n]{0,18})/i
+    ]);
+    const expiryRaw = firstMatch(compact, [
+      /(?:有效期至|有效期|失效期|EXP|Expiry)\D*(20\d{2}[^;；\n]{0,18})/i
+    ]);
+    const candidates = extractDateCandidates(compact);
+    const productionDate = parseDate(productionRaw) || (candidates.find(item => item.dayKnown)?.value || "");
+    const expiryDate = parseDate(expiryRaw, true) || (candidates.find(item => productionDate && item.value > productionDate)?.value || candidates.at(-1)?.value || "");
+    return { batchNo, productionDate, expiryDate };
   }
 
   function parsePackageText(rawText) {
@@ -134,23 +159,15 @@
     const code = window.clinicNormalizeApprovalNo?.(rawApproval || compact) || rawApproval;
     const spec = firstMatch(compact, [
       /规格[:\s]*([^;；\n]+?)(?:\s{2,}| 生产| 批号| 有效期|$)/,
-      /(\d+(?:\.\d+)?\s*(?:mg|g|ml|mL|ug|μg|IU|万单位)\s*(?:x|X|×)?\s*\d*\s*(?:片|粒|支|袋|瓶|丸|贴)?)/i
+      /(\d+(?:\.\d+)?\s*(?:mg|g|ml|mL|ug|μg|IU|万单位)?\s*(?:x|X|×)?\s*\d*\s*(?:片|粒|支|袋|瓶|丸|贴|盒|包)?)/i
     ]);
     const manufacturer = firstMatch(compact, [
       /(?:生产企业|生产厂家|厂家|企业名称)[:\s]*([^;；\n]+?)(?:\s{2,}| 批号| 生产日期| 有效期|$)/,
       /(?:上市许可持有人)[:\s]*([^;；\n]+?)(?:\s{2,}| 批号| 生产日期| 有效期|$)/
     ]);
-    const batchNo = firstMatch(compact, [
-      /(?:产品批号|生产批号|批号|LOT|Lot)[:\s]*([A-Za-z0-9.-]{3,30})/
-    ]) || labeled.batchNo;
-    const productionDate = labeled.productionDate || parseDate(firstMatch(compact, [
-      /(?:生产日期)[:\s]*(\d{4}[年./-]?\d{1,2}[月./-]?\d{1,2})/,
-      /(?:MFG|MFD)[:\s]*(\d{4}[./-]?\d{1,2}[./-]?\d{1,2})/i
-    ]));
-    const expiryDate = labeled.expiryDate || parseDate(firstMatch(compact, [
-      /(?:有效期至|有效期|失效期)[:\s]*(\d{4}[年./-]?\d{1,2}[月./-]?\d{1,2})/,
-      /(?:EXP|Expiry)[:\s]*(\d{4}[./-]?\d{1,2}[./-]?\d{1,2})/i
-    ]), true);
+    const batchNo = labeled.batchNo;
+    const productionDate = labeled.productionDate;
+    const expiryDate = labeled.expiryDate;
     const name = firstMatch(compact, [
       /(?:药品名称|通用名称|品名)[:\s]*([^;；\n]+?)(?:\s{2,}| 规格| 批准文号|$)/
     ]) || inferName(text);
@@ -237,7 +254,7 @@
   }
 
   async function recognizeImage(file) {
-    setStatus(label.working, ["图片越清晰、文字越正，识别越准。"]);
+    setStatus(label.working, ["图片越清晰、文字越正，识别越准。建议先拍药盒正面，再拍批号/效期侧面。"]);
     try {
       const endpointText = await ocrWithEndpoint(file);
       if (endpointText) {
@@ -259,7 +276,7 @@
       await applyText(text);
     } catch (error) {
       console.error(error);
-      setStatus(label.fail, [label.failHint, "建议配置授权 OCR/药品追溯数据接口。"]);
+      setStatus(label.fail, [label.failHint, "追溯码自动反查药品资料需要授权追溯平台接口；普通外部药品库优先通过国药准字、药名或商品条码匹配。"]);
       textBox.hidden = false;
     }
   }
@@ -274,4 +291,6 @@
     const file = fileInput.files?.[0];
     if (file) recognizeImage(file);
   });
+
+  window.KERUIKANG_PARSE_PACKAGE_TEXT = parsePackageText;
 })();

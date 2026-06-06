@@ -196,7 +196,7 @@ function scanStatus(form, type, item, parsed) {
     return {
       state: "manual",
       title: "\u836f\u54c1\u8ffd\u6eaf\u7801\u5df2\u89e3\u6790",
-      detail: "\u5df2\u8bc6\u522b\u836f\u54c1\u6807\u8bc6\u7801\u548c\u5e8f\u5217\u53f7\uff0c\u4f46\u672a\u63a5\u5165\u6388\u6743\u8ffd\u6eaf\u6570\u636e\u5e93\u3002\u8bf7\u624b\u52a8\u8865\u5168\u836f\u54c1\u6863\u6848\uff0c\u4fdd\u5b58\u540e\u53ef\u7528\u8be5\u6807\u8bc6\u7801\u81ea\u52a8\u5339\u914d\u3002"
+      detail: "\u5df2\u8bc6\u522b\u836f\u54c1\u6807\u8bc6\u7801\u548c\u5e8f\u5217\u53f7\uff0c\u4f46\u666e\u901a\u836f\u54c1\u5e93\u65e0\u6cd5\u76f4\u63a5\u7528\u8ffd\u6eaf\u7801\u8fd4\u56de\u836f\u540d\u3002\u8bf7\u62cd\u5305\u542b\u201c\u56fd\u836f\u51c6\u5b57/\u836f\u540d\u201d\u7684\u5305\u88c5\u6b63\u9762\uff0c\u6216\u914d\u7f6e\u6388\u6743\u8ffd\u6eaf\u5e73\u53f0\u63a5\u53e3\u540e\u518d\u81ea\u52a8\u5339\u914d\u3002"
     };
   }
   if (!hasDrug && !hasBatch) {
@@ -288,7 +288,7 @@ function fillMedicineForm(item, parsed, source) {
   const barcodeToStore = parsed.traceDrugCode || parsed.gtin || parsed.barcode || medicineBarcodeInput.value;
   setField(medicineEntryForm, "barcode", barcodeToStore);
   setField(medicineEntryForm, "name", medicine.name);
-  setField(medicineEntryForm, "code", medicine.code || medicine.approvalNo || (parsed.traceDrugCode ? `TRACE-${parsed.traceDrugCode}` : `BC-${barcodeToStore || Date.now()}`));
+  setField(medicineEntryForm, "code", medicine.code || medicine.approvalNo || (parsed.traceDrugCode ? "" : `BC-${barcodeToStore || Date.now()}`));
   setField(medicineEntryForm, "category", medicine.category || "\u897f\u836f");
   setField(medicineEntryForm, "spec", medicine.spec);
   setField(medicineEntryForm, "unit", medicine.unit);
@@ -357,7 +357,19 @@ async function lookupBarcode(target = "medicine") {
     return;
   }
 
-  if (item.name || parsed.batchNo || parsed.expiryDate || parsed.traceDrugCode) {
+  if (parsed.traceDrugCode && !item.name && !parsed.batchNo && !parsed.productionDate && !parsed.expiryDate) {
+    setField(form, "barcode", parsed.traceDrugCode);
+    setScanState(form, result, { state: "manual" });
+    result.innerHTML = resultHtml("lookup-warning", "\u8ffd\u6eaf\u7801\u5df2\u8bc6\u522b\uff0c\u4f46\u6682\u65f6\u4e0d\u80fd\u76f4\u63a5\u53cd\u67e5\u836f\u540d", [
+      `\u836f\u54c1\u6807\u8bc6\u7801\uff1a${parsed.traceDrugCode}${parsed.traceSerialNo ? `\uff0c\u5e8f\u5217\u53f7\uff1a${parsed.traceSerialNo}` : ""}`,
+      "\u8fd9\u7c7b\u8ffd\u6eaf\u7801\u9700\u8981\u63a5\u5165\u6388\u6743\u8ffd\u6eaf\u5e73\u53f0\uff08\u4f8b\u5982\u836f\u54c1\u8ffd\u6eaf/\u7801\u4e0a\u653e\u5fc3\u7c7b\u63a5\u53e3\uff09\uff0c\u666e\u901a\u6761\u7801\u5e93\u901a\u5e38\u67e5\u4e0d\u5230\u836f\u540d\u3002",
+      "\u73b0\u5728\u8bf7\u70b9\u51fb\u201c\u8bc6\u522b\u5305\u88c5\u7167\u7247\u201d\uff0c\u62cd\u6709\u201c\u56fd\u836f\u51c6\u5b57Z20090429\u201d\u6216\u836f\u540d\u7684\u6b63\u9762\uff0c\u7cfb\u7edf\u4f1a\u7528\u6279\u51c6\u6587\u53f7/\u836f\u540d\u53bb\u67e5\u5916\u90e8\u836f\u54c1\u5e93\u3002"
+    ]);
+    window.dispatchEvent(new CustomEvent("clinic:barcode-lookup-complete"));
+    return;
+  }
+
+  if (item.name || parsed.batchNo || parsed.expiryDate) {
     fillMedicineForm(item, parsed, local ? "\u8bca\u6240\u5df2\u6709\u836f\u54c1\u5e93" : reference ? "\u672c\u5730\u836f\u54c1\u8d44\u6599\u5e93" : item.name ? "\u836f\u54c1\u8d44\u6599\u5e93" : "\u6761\u7801\u89e3\u6790");
     window.dispatchEvent(new CustomEvent("clinic:barcode-lookup-complete"));
     return;
