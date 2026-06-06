@@ -1,20 +1,44 @@
 (function () {
   const form = document.getElementById("medicineForm");
-  const lookupResult = document.getElementById("lookupResult");
-  if (!form || !lookupResult) return;
+  const barcodeRow = document.querySelector("#medicineBarcode")?.closest("label");
+  if (!form || !barcodeRow) return;
+
+  const label = {
+    photo: "\u8bc6\u522b\u5305\u88c5\u7167\u7247",
+    paste: "\u7c98\u8d34\u5305\u88c5\u6587\u5b57\u8bc6\u522b",
+    textPlaceholder: "\u4e5f\u53ef\u4ee5\u628a\u5305\u88c5\u4e0a\u7684\u6587\u5b57\u7c98\u8d34\u5230\u8fd9\u91cc\uff0c\u4f8b\u5982\uff1a\u836f\u540d\u3001\u89c4\u683c\u3001\u5382\u5bb6\u3001\u6279\u53f7\u3001\u751f\u4ea7\u65e5\u671f\u3001\u6709\u6548\u671f\u3002",
+    working: "\u6b63\u5728\u8bc6\u522b\u5305\u88c5\u7167\u7247...",
+    filled: "\u5305\u88c5\u6587\u5b57\u5df2\u8bc6\u522b\uff0c\u5df2\u81ea\u52a8\u586b\u5165\u8868\u5355",
+    empty: "\u6682\u672a\u8bc6\u522b\u5230\u53ef\u7528\u5b57\u6bb5",
+    missing: "\u4ecd\u9700\u4eba\u5de5\u6838\u5bf9/\u8865\u5168",
+    ok: "\u5173\u952e\u5b57\u6bb5\u5df2\u8bc6\u522b\uff0c\u4fdd\u5b58\u524d\u8bf7\u6309\u5305\u88c5\u6838\u5bf9\u3002",
+    fail: "\u6d4f\u89c8\u5668 OCR \u52a0\u8f7d\u5931\u8d25",
+    failHint: "\u53ef\u4ee5\u5148\u628a\u5305\u88c5\u6587\u5b57\u624b\u52a8\u7c98\u8d34\u5230\u6587\u672c\u6846\u8bc6\u522b\u3002"
+  };
+
+  const fieldLabel = {
+    name: "\u836f\u54c1\u540d\u79f0",
+    code: "\u836f\u54c1\u7f16\u7801/\u6279\u51c6\u6587\u53f7",
+    spec: "\u89c4\u683c",
+    unit: "\u5355\u4f4d",
+    manufacturer: "\u751f\u4ea7\u5382\u5bb6",
+    batchNo: "\u6279\u53f7",
+    productionDate: "\u751f\u4ea7\u65e5\u671f",
+    expiryDate: "\u6709\u6548\u671f"
+  };
 
   const panel = document.createElement("div");
   panel.className = "package-ocr-panel wide";
   panel.innerHTML = `
     <div class="package-ocr-actions">
-      <button class="btn secondary" type="button" id="packageOcrButton">识别包装照片</button>
-      <button class="btn secondary" type="button" id="packageTextButton">粘贴包装文字识别</button>
+      <button class="btn secondary" type="button" id="packageOcrButton">${label.photo}</button>
+      <button class="btn secondary" type="button" id="packageTextButton">${label.paste}</button>
       <input id="packageOcrFile" type="file" accept="image/*" capture="environment" hidden>
     </div>
-    <textarea id="packageOcrText" rows="4" placeholder="也可以把包装上的文字粘贴到这里，例如：药名、规格、厂家、批号、生产日期、有效期。" hidden></textarea>
+    <textarea id="packageOcrText" rows="4" placeholder="${label.textPlaceholder}" hidden></textarea>
     <div class="lookup-result" id="packageOcrResult"></div>
   `;
-  lookupResult.insertAdjacentElement("afterend", panel);
+  barcodeRow.insertAdjacentElement("afterend", panel);
 
   const fileInput = document.getElementById("packageOcrFile");
   const textBox = document.getElementById("packageOcrText");
@@ -56,22 +80,22 @@
   function inferName(text) {
     const lines = text.split(/\n+/).map(line => line.trim()).filter(Boolean);
     const blocked = /追溯码|标识码|序列号|批准文号|生产日期|有效期|规格|厂家|企业|批号|功能主治|用法用量/;
-    const drugSuffix = /(片|胶囊|颗粒|丸|口服液|注射液|滴丸|糖浆|散|膏|贴|喷雾剂|合剂|酊|栓|洗剂|滴眼液|滴耳液)$/;
-    return lines.find(line => line.length >= 2 && line.length <= 24 && drugSuffix.test(line) && !blocked.test(line)) || "";
+    const suffix = /(片|胶囊|颗粒|丸|口服液|注射液|滴丸|糖浆|散|膏|贴|喷雾剂|合剂|酊|栓|洗剂|滴眼液|滴耳液)$/;
+    return lines.find(line => line.length >= 2 && line.length <= 24 && suffix.test(line) && !blocked.test(line)) || "";
   }
 
   function inferUnit(specText) {
-    if (/支/.test(specText)) return "支";
-    if (/瓶/.test(specText)) return "瓶";
-    if (/袋/.test(specText)) return "袋";
-    if (/包/.test(specText)) return "包";
-    return "盒";
+    if (/支/.test(specText)) return "\u652f";
+    if (/瓶/.test(specText)) return "\u74f6";
+    if (/袋/.test(specText)) return "\u888b";
+    if (/包/.test(specText)) return "\u5305";
+    return "\u76d2";
   }
 
   function parsePackageText(rawText) {
     const text = normalizeText(rawText);
     const compact = text.replace(/\n/g, " ");
-    const approvalNo = firstMatch(compact, [
+    const code = firstMatch(compact, [
       /(国药准字[ZHBSJ]\d{8})/i,
       /批准文号[:\s]*(国药准字[ZHBSJ]\d{8})/i
     ]);
@@ -87,7 +111,7 @@
       /(?:产品批号|生产批号|批号|LOT|Lot)[:\s]*([A-Za-z0-9.-]{3,30})/
     ]);
     const productionDate = parseDate(firstMatch(compact, [
-      /(?:生产日期|生产日期\/批号)[:\s]*(\d{4}[年./-]?\d{1,2}[月./-]?\d{1,2})/,
+      /(?:生产日期)[:\s]*(\d{4}[年./-]?\d{1,2}[月./-]?\d{1,2})/,
       /(?:MFG|MFD)[:\s]*(\d{4}[./-]?\d{1,2}[./-]?\d{1,2})/i
     ]));
     const expiryDate = parseDate(firstMatch(compact, [
@@ -98,51 +122,38 @@
       /(?:药品名称|通用名称|品名)[:\s]*([^;；\n]+?)(?:\s{2,}| 规格| 批准文号|$)/
     ]) || inferName(text);
 
-    return {
-      name,
-      code: approvalNo,
-      spec,
-      unit: inferUnit(spec),
-      manufacturer,
-      batchNo,
-      productionDate,
-      expiryDate
-    };
+    return { name, code, spec, unit: inferUnit(spec), manufacturer, batchNo, productionDate, expiryDate };
+  }
+
+  function fillSelectOrInput(name, value) {
+    if (!value) return;
+    const field = form.elements[name];
+    if (!field) return;
+    if (field.tagName === "SELECT" && ![...field.options].some(option => option.value === value || option.textContent === value)) {
+      field.add(new Option(value, value));
+    }
+    field.value = value;
   }
 
   function fillFromParsed(parsed) {
-    const map = {
-      name: parsed.name,
-      code: parsed.code,
-      spec: parsed.spec,
-      unit: parsed.unit,
-      manufacturer: parsed.manufacturer,
-      batchNo: parsed.batchNo,
-      productionDate: parsed.productionDate,
-      expiryDate: parsed.expiryDate
-    };
-    Object.entries(map).forEach(([name, value]) => {
-      if (!value) return;
-      const field = form.elements[name];
-      if (!field) return;
-      if (field.tagName === "SELECT" && ![...field.options].some(option => option.value === value || option.textContent === value)) {
-        field.add(new Option(value, value));
-      }
-      field.value = value;
-    });
+    Object.entries(parsed).forEach(([name, value]) => fillSelectOrInput(name, value));
     if (!form.elements.quantity.value) form.elements.quantity.value = "1";
   }
 
   function applyText(text) {
     const parsed = parsePackageText(text);
     fillFromParsed(parsed);
-    const filled = Object.entries(parsed).filter(([, value]) => value).map(([key, value]) => `${key}: ${value}`);
-    const missing = ["name", "code", "spec", "batchNo", "productionDate", "expiryDate"].filter(key => !parsed[key]);
+    const filled = Object.entries(parsed)
+      .filter(([, value]) => value)
+      .map(([key, value]) => `${fieldLabel[key] || key}: ${value}`);
+    const missing = ["name", "code", "spec", "batchNo", "productionDate", "expiryDate"]
+      .filter(key => !parsed[key])
+      .map(key => fieldLabel[key] || key);
     setStatus(
-      filled.length ? "包装文字已识别，已自动填入表单" : "暂未识别到可用字段",
+      filled.length ? label.filled : label.empty,
       [
         ...filled,
-        missing.length ? `仍需人工核对/补全：${missing.join("、")}` : "关键字段已识别，保存前请按包装核对。"
+        missing.length ? `${label.missing}: ${missing.join("\u3001")}` : label.ok
       ],
       filled.length ? "lookup-success" : "lookup-warning"
     );
@@ -172,7 +183,7 @@
   }
 
   async function recognizeImage(file) {
-    setStatus("正在识别包装照片...", ["图片越清晰、文字越正，识别越准。"]);
+    setStatus(label.working, ["\u56fe\u7247\u8d8a\u6e05\u6670\u3001\u6587\u5b57\u8d8a\u6b63\uff0c\u8bc6\u522b\u8d8a\u51c6\u3002"]);
     try {
       const endpointText = await ocrWithEndpoint(file);
       if (endpointText) {
@@ -194,10 +205,7 @@
       applyText(text);
     } catch (error) {
       console.error(error);
-      setStatus("浏览器 OCR 加载失败", [
-        "可以先把包装文字手动粘贴到下方文本框识别。",
-        "后续建议接入授权 OCR/药品追溯数据库接口，识别会更稳定。"
-      ]);
+      setStatus(label.fail, [label.failHint, "\u540e\u7eed\u5efa\u8bae\u63a5\u5165\u6388\u6743 OCR/\u836f\u54c1\u8ffd\u6eaf\u6570\u636e\u5e93\u63a5\u53e3\u3002"]);
       textBox.hidden = false;
     }
   }
