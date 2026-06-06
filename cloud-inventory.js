@@ -63,11 +63,55 @@
     const { data: result, error } = await client.rpc(name, payload);
     if (error) {
       if (/function .* does not exist/i.test(error.message || "")) {
-        throw new Error("数据库 RPC 还没有安装，请先在 Supabase 执行 migration-03 SQL");
+        throw new Error("数据库 RPC 还没有安装，请先在 Supabase 执行最新 migration SQL");
       }
       throw error;
     }
     return result || [];
+  }
+
+  function readLookupResult(form) {
+    try {
+      return JSON.parse(form?.dataset?.lookupResult || "{}") || {};
+    } catch {
+      return {};
+    }
+  }
+
+  function buildTraceInboundPayload(values, form, forcedMedicineId = "") {
+    const lookupResult = readLookupResult(form);
+    const existingMedicine = byId(values.medicineId || forcedMedicineId);
+    const rawCode = values.barcode || values.stockBarcode || lookupResult.rawCode || "";
+    return {
+      rawCode,
+      lookupResult: {
+        ...lookupResult,
+        rawCode: lookupResult.rawCode || rawCode,
+        traceCode: lookupResult.traceCode || form?.dataset?.traceCode || "",
+        medicineId: lookupResult.medicineId || forcedMedicineId || values.medicineId || ""
+      },
+      confirmedFields: {
+        medicineId: forcedMedicineId || values.medicineId || lookupResult.medicineId || "",
+        drugName: values.name || lookupResult.drugName || existingMedicine?.name || "",
+        name: values.name || lookupResult.drugName || existingMedicine?.name || "",
+        approvalNo: values.code || lookupResult.approvalNo || existingMedicine?.code || "",
+        code: values.code || lookupResult.approvalNo || existingMedicine?.code || "",
+        manufacturer: values.manufacturer || lookupResult.manufacturer || existingMedicine?.manufacturer || "",
+        category: values.category || existingMedicine?.category || "",
+        packageSpec: values.spec || lookupResult.packageSpec || existingMedicine?.spec || "",
+        spec: values.spec || lookupResult.packageSpec || existingMedicine?.spec || "",
+        unit: values.unit || existingMedicine?.unit || "盒",
+        retailPrice: values.salePrice || existingMedicine?.salePrice || "",
+        stockWarning: values.minStock || existingMedicine?.minStock || 20,
+        batchNo: values.batchNo,
+        productionDate: values.productionDate,
+        expiryDate: values.expiryDate,
+        expiryPrecision: values.expiryPrecision || "day",
+        quantity: values.quantity,
+        barcode: rawCode
+      },
+      userConfirmed: values.scanConfirmed === "on" || values.stockScanConfirmed === "on" || !rawCode
+    };
   }
 
   function mapMedicine(medicine, batches) {
@@ -141,38 +185,15 @@
     render();
   }
 
-  async function createMedicineWithInitialStock(values) {
+  async function createMedicineWithInitialStock(values, form) {
     assertDates(values.productionDate, values.expiryDate);
-    const quantity = assertPositiveQuantity(values.quantity);
-    const user = await signedInUser();
-    const medicineId = crypto.randomUUID();
+    assertPositiveQuantity(values.quantity);
 
-    const { error: medicineError } = await client.from("medicines").insert({
-      id: medicineId,
-      name: values.name,
-      barcode: values.barcode || null,
-      category: values.category || null,
-      specification: values.spec || null,
-      manufacturer: values.manufacturer || null,
-      approval_number: values.code || null,
-      default_unit: values.unit || "盒",
-      retail_price: money(values.salePrice),
-      low_stock_threshold: Number(values.minStock || 0),
-      active: true,
-      created_by: user.id
+    const inbound = await rpc("rpc_trace_inbound", {
+      p_payload: buildTraceInboundPayload(values, form)
     });
-    if (medicineError) throw medicineError;
-
-    await rpc("rpc_stock_in", {
-      p_medicine_id: medicineId,
-      p_batch_number: values.batchNo,
-      p_quantity: quantity,
-      p_production_date: values.productionDate,
-      p_expiry_date: values.expiryDate,
-      p_unit: values.unit || "盒",
-      p_location: "药房默认库位",
-      p_note: "首次录入"
-    });
+    const medicineId = inbound?.[0]?.medicine_id;
+    if (!medicineId) throw new Error("云端入库成功但未返回药品 ID");
 
     await client.from("public_catalog").upsert({
       medicine_id: medicineId,
@@ -197,7 +218,7 @@
 
     try {
       const values = formValues(event.target);
-      await createMedicineWithInitialStock(values);
+      await createMedicineWithInitialStock(values, event.target);
       await refreshCloudInventory();
       event.target.reset();
       closeModals();
@@ -221,16 +242,22 @@
       const quantity = assertPositiveQuantity(values.quantity);
       if (values.type === "in") {
         assertDates(values.productionDate, values.expiryDate);
-        await rpc("rpc_stock_in", {
-          p_medicine_id: values.medicineId,
-          p_batch_number: values.batchNo,
-          p_quantity: quantity,
-          p_production_date: values.productionDate,
-          p_expiry_date: values.expiryDate,
-          p_unit: byId(values.medicineId)?.unit || "盒",
-          p_location: byId(values.medicineId)?.location || "药房默认库位",
-          p_note: values.note || "扫码/手动入库"
-        });
+        if (values.stockBarcode) {
+          await rpc("rpc_trace_inbound", {
+            p_payload: buildTraceInboundPayload(values, event.target, values.medicineId)
+          });
+        } else {
+          await rpc("rpc_stock_in", {
+            p_medicine_id: values.medicineId,
+            p_batch_number: values.batchNo,
+            p_quantity: quantity,
+            p_production_date: values.productionDate,
+            p_expiry_date: values.expiryDate,
+            p_unit: byId(values.medicineId)?.unit || "盒",
+            p_location: byId(values.medicineId)?.location || "药房默认库位",
+            p_note: values.note || "扫码/手动入库"
+          });
+        }
       } else {
         await rpc("rpc_stock_out", {
           p_medicine_id: values.medicineId,
