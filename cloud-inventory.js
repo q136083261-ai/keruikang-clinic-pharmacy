@@ -192,6 +192,8 @@
     if (!cloudMode()) return;
     event.preventDefault();
     event.stopImmediatePropagation();
+    if (window.KERUIKANG_VALIDATE_SCAN_BEFORE_SAVE &&
+        !window.KERUIKANG_VALIDATE_SCAN_BEFORE_SAVE(event.target, "medicine")) return;
 
     try {
       const values = formValues(event.target);
@@ -210,6 +212,9 @@
     if (!cloudMode()) return;
     event.preventDefault();
     event.stopImmediatePropagation();
+    const stockType = new FormData(event.target).get("type");
+    if (stockType === "in" && window.KERUIKANG_VALIDATE_SCAN_BEFORE_SAVE &&
+        !window.KERUIKANG_VALIDATE_SCAN_BEFORE_SAVE(event.target, "stock")) return;
 
     try {
       const values = formValues(event.target);

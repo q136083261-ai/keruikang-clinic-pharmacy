@@ -102,3 +102,30 @@
     grid-template-columns: 1fr;
   }
 }
+
+.package-ocr-panel {
+  grid-column: 1 / -1;
+  margin-top: -4px;
+}
+
+.package-ocr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+#packageOcrText {
+  width: 100%;
+  min-height: 92px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  resize: vertical;
+  outline: none;
+}
+
+#packageOcrText:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, .14);
+}
