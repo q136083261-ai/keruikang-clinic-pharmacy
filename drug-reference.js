@@ -18,21 +18,40 @@
   }
 
   async function lookupExternalDrug(params = {}) {
-    const query = new URLSearchParams();
+    const cleanParams = {};
     Object.entries(params).forEach(([key, value]) => {
-      if (value) query.set(key, value);
+      if (value) cleanParams[key] = value;
     });
-    if (![...query.keys()].length) return null;
+    if (!Object.keys(cleanParams).length) return null;
+
     try {
-      const response = await fetch(`/api/drug-lookup?${query.toString()}`, {
-        headers: { "Accept": "application/json" }
-      });
-      if (!response.ok) return null;
-      const body = await response.json();
-      return body.data || null;
+      const hasTracePayload = cleanParams.rawCode || cleanParams.traceCode;
+      const response = hasTracePayload
+        ? await fetch("/api/drug-lookup", {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify(cleanParams)
+          })
+        : await fetch(`/api/drug-lookup?${new URLSearchParams(cleanParams).toString()}`, {
+            headers: { "Accept": "application/json" }
+          });
+      const body = await response.json().catch(() => ({}));
+      if (body?.success === false) return { __lookupError: true, ...body };
+      if (!response.ok) {
+        return {
+          __lookupError: true,
+          errorCode: `HTTP_${response.status}`,
+          message: body?.message || body?.error || "药品查询失败"
+        };
+      }
+      return body.data || (body?.success ? body : null);
     } catch (error) {
       console.warn("External drug lookup failed", error);
-      return null;
+      return {
+        __lookupError: true,
+        errorCode: "NETWORK_ERROR",
+        message: error.message || "药品查询网络失败"
+      };
     }
   }
 

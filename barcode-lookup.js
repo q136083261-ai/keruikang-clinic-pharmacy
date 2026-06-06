@@ -128,6 +128,11 @@ function parseChinaTraceCode(raw, parsed) {
     parsed.traceDrugCode = normalized.slice(0, 7);
     parsed.traceSerialNo = normalized.slice(7);
     parsed.traceFullCode = normalized;
+    parsed.gtin = "";
+    parsed.batchNo = "";
+    parsed.productionDate = "";
+    parsed.expiryDate = "";
+    parsed.quantity = "";
   } else if (!parsed.gtin && !parsed.batchNo && /^8\d{6}$/.test(normalized)) {
     parsed.traceDrugCode = normalized;
   }
@@ -232,6 +237,32 @@ function resultHtml(cls, title, lines) {
   return `<div class="${cls}"><strong>${title}</strong>${lines.map(line => `<span>${line}</span>`).join("")}</div>`;
 }
 
+function isFullTraceCode(parsed, rawBarcode = "") {
+  const trace = parsed?.traceFullCode || normalizeBarcode(rawBarcode || "");
+  return /^8\d{19}$/.test(trace);
+}
+
+function traceLookupErrorMessage(error) {
+  if (error?.errorCode === "CONFIG_MISSING") {
+    return {
+      title: "外部追溯接口未配置",
+      lines: [
+        "已识别为完整药品追溯码，但外部追溯接口未返回药品资料。",
+        "请检查码上放心/阿里健康 AppKey、Secret、ref_ent_id 配置，或使用包装照片识别兜底。",
+        `错误码：${error.errorCode}`
+      ]
+    };
+  }
+  return {
+    title: "外部追溯接口未返回药品资料",
+    lines: [
+      "已识别为完整药品追溯码，但外部查询没有返回可自动填入的药品资料。",
+      error?.message ? `接口信息：${error.message}` : "可使用包装照片识别兜底，并在人工确认后建立本地药品主档。",
+      error?.errorCode ? `错误码：${error.errorCode}` : ""
+    ].filter(Boolean)
+  };
+}
+
 function traceLookupKeys(parsed, rawBarcode) {
   const keys = [
     parsed.traceDrugCode,
@@ -250,7 +281,7 @@ function traceCodeFor(parsed, rawBarcode) {
 function setLookupState(form, parsed, item = {}, source = "", cloudStatus = null) {
   const lookup = {
     rawCode: parsed.raw || "",
-    codeType: cloudStatus?.code_type || (parsed.traceFullCode ? "MSFX_TRACE" : parsed.gtin ? "GS1_OR_EAN" : "UNKNOWN"),
+    codeType: cloudStatus?.code_type || (isFullTraceCode(parsed) ? "MSFX_20" : parsed.traceFullCode ? "MSFX_TRACE" : parsed.gtin ? "GS1_OR_EAN" : "UNKNOWN"),
     traceCode: item.traceCode || parsed.traceFullCode || "",
     productResourceCode: item.productResourceCode || cloudStatus?.product_resource_code || parsed.traceDrugCode || "",
     serialNo: item.serialNo || cloudStatus?.serial_no || parsed.traceSerialNo || parsed.serialNo || "",
@@ -301,10 +332,12 @@ function findLocalMedicine(parsed, rawBarcode) {
 async function externalLookup(barcode, parsed) {
   const approvalNo = window.clinicNormalizeApprovalNo?.(parsed?.approvalNo || parsed?.code || "");
   const proxyItem = await window.clinicExternalDrugLookup?.({
+    rawCode: parsed?.traceFullCode || barcode,
     barcode,
     traceCode: parsed?.traceFullCode || parsed?.traceDrugCode || "",
     approvalNo
   });
+  if (proxyItem?.__lookupError) return proxyItem;
   if (proxyItem?.name) return proxyItem;
 
   const endpoint = localStorage.getItem("clinic-barcode-api-url");
@@ -345,9 +378,10 @@ async function externalLookup(barcode, parsed) {
 function fillMedicineForm(item, parsed, source) {
   const medicine = { ...item };
   const barcodeToStore = parsed.traceFullCode || parsed.traceDrugCode || parsed.gtin || parsed.barcode || medicineBarcodeInput.value;
+  const isTrace = isFullTraceCode(parsed, barcodeToStore) || parsed.traceDrugCode;
   setField(medicineEntryForm, "barcode", barcodeToStore);
   setField(medicineEntryForm, "name", medicine.name);
-  setField(medicineEntryForm, "code", medicine.code || medicine.approvalNo || (parsed.traceDrugCode ? "" : `BC-${barcodeToStore || Date.now()}`));
+  setField(medicineEntryForm, "code", medicine.code || medicine.approvalNo || (isTrace ? "" : `BC-${barcodeToStore || Date.now()}`));
   setField(medicineEntryForm, "category", medicine.category || "\u897f\u836f");
   setField(medicineEntryForm, "spec", medicine.spec);
   setField(medicineEntryForm, "unit", medicine.unit);
@@ -428,7 +462,18 @@ async function lookupBarcode(target = "medicine") {
     manufacturer: cloudStatus.manufacturer
   } : null;
   const reference = null;
-  const item = local || cloudLocal || reference || await externalLookup(barcode, parsed) || demoBarcodeCatalog[barcode] || {};
+  const externalItem = await externalLookup(barcode, parsed);
+  if (externalItem?.__lookupError && isFullTraceCode(parsed, raw)) {
+    setLookupState(form, parsed, externalItem, "外部追溯接口", cloudStatus);
+    setField(form, "barcode", parsed.traceFullCode);
+    setScanState(form, result, { state: "manual" });
+    const message = traceLookupErrorMessage(externalItem);
+    result.innerHTML = resultHtml("lookup-warning", message.title, message.lines);
+    window.dispatchEvent(new CustomEvent("clinic:barcode-lookup-complete"));
+    return;
+  }
+
+  const item = local || cloudLocal || reference || (externalItem?.__lookupError ? null : externalItem) || demoBarcodeCatalog[barcode] || {};
   setLookupState(form, parsed, item, local ? "\u8bca\u6240\u5df2\u6709\u836f\u54c1\u5e93" : cloudLocal ? "\u4e91\u7aef\u672c\u5730\u836f\u54c1\u4e3b\u6863" : item.name ? "\u836f\u54c1\u8d44\u6599\u5e93" : "\u6761\u7801\u89e3\u6790", cloudStatus);
 
   if (target === "stock") {
@@ -438,12 +483,12 @@ async function lookupBarcode(target = "medicine") {
   }
 
   if (parsed.traceDrugCode && !item.name && !parsed.batchNo && !parsed.productionDate && !parsed.expiryDate) {
-    setField(form, "barcode", parsed.traceDrugCode);
+    setField(form, "barcode", parsed.traceFullCode || parsed.traceDrugCode);
     setScanState(form, result, { state: "manual" });
-    result.innerHTML = resultHtml("lookup-warning", "\u8ffd\u6eaf\u7801\u5df2\u8bc6\u522b\uff0c\u4f46\u6682\u65f6\u4e0d\u80fd\u76f4\u63a5\u53cd\u67e5\u836f\u540d", [
-      `\u836f\u54c1\u6807\u8bc6\u7801\uff1a${parsed.traceDrugCode}${parsed.traceSerialNo ? `\uff0c\u5e8f\u5217\u53f7\uff1a${parsed.traceSerialNo}` : ""}`,
-      "\u8fd9\u7c7b\u8ffd\u6eaf\u7801\u9700\u8981\u63a5\u5165\u6388\u6743\u8ffd\u6eaf\u5e73\u53f0\uff08\u4f8b\u5982\u836f\u54c1\u8ffd\u6eaf/\u7801\u4e0a\u653e\u5fc3\u7c7b\u63a5\u53e3\uff09\uff0c\u666e\u901a\u6761\u7801\u5e93\u901a\u5e38\u67e5\u4e0d\u5230\u836f\u540d\u3002",
-      "\u73b0\u5728\u8bf7\u70b9\u51fb\u201c\u8bc6\u522b\u5305\u88c5\u7167\u7247\u201d\uff0c\u62cd\u6709\u201c\u56fd\u836f\u51c6\u5b57Z20090429\u201d\u6216\u836f\u540d\u7684\u6b63\u9762\uff0c\u7cfb\u7edf\u4f1a\u7528\u6279\u51c6\u6587\u53f7/\u836f\u540d\u53bb\u67e5\u5916\u90e8\u836f\u54c1\u5e93\u3002"
+    result.innerHTML = resultHtml("lookup-warning", "已识别为完整药品追溯码", [
+      `药品标识码：${parsed.traceDrugCode}${parsed.traceSerialNo ? `，序列号：${parsed.traceSerialNo}` : ""}`,
+      "但外部追溯接口未返回药品资料。请检查外部接口配置，或使用包装照片识别兜底。",
+      "系统不会把完整追溯码生成药品主档编码；该码只会作为单盒追溯码保存。"
     ]);
     window.dispatchEvent(new CustomEvent("clinic:barcode-lookup-complete"));
     return;
@@ -451,6 +496,18 @@ async function lookupBarcode(target = "medicine") {
 
   if (item.name || parsed.batchNo || parsed.expiryDate) {
     fillMedicineForm(item, parsed, local ? "\u8bca\u6240\u5df2\u6709\u836f\u54c1\u5e93" : cloudLocal ? "\u4e91\u7aef\u672c\u5730\u836f\u54c1\u4e3b\u6863" : item.name ? "\u836f\u54c1\u8d44\u6599\u5e93" : "\u6761\u7801\u89e3\u6790");
+    window.dispatchEvent(new CustomEvent("clinic:barcode-lookup-complete"));
+    return;
+  }
+
+  if (isFullTraceCode(parsed, raw)) {
+    setField(form, "barcode", parsed.traceFullCode);
+    setScanState(form, result, { state: "manual" });
+    result.innerHTML = resultHtml("lookup-warning", "已识别为完整药品追溯码", [
+      "外部追溯接口没有返回药品资料，不能自动建立药品主档编码。",
+      "请使用包装照片识别兜底，或配置真实外部追溯接口后再自动匹配。",
+      `完整追溯码：${parsed.traceFullCode}`
+    ]);
     window.dispatchEvent(new CustomEvent("clinic:barcode-lookup-complete"));
     return;
   }
