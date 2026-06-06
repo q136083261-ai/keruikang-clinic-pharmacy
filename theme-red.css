@@ -11,3 +11,19 @@
 .cloud-sync-status{position:fixed;right:18px;bottom:18px;z-index:40;padding:7px 11px;border-radius:16px;background:#eef3f5;color:#607176;font-size:11px;box-shadow:0 4px 16px rgba(30,71,94,.12)}.cloud-sync-status.working{background:#fff4db;color:#9b6a1b}.cloud-sync-status.ok{background:#e3f5f0;color:#087f68}.cloud-sync-status.error{background:#fee7e6;color:#bf4a48}
 .lookup-result span{line-height:1.5}.lookup-success strong,.lookup-missing strong{margin-bottom:3px}.barcode-line .btn{white-space:nowrap}@media(max-width:760px){.barcode-line{flex-direction:column}.barcode-line .btn{width:100%}}
 .scan-confirm{display:flex!important;gap:8px;align-items:center;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;background:#fbfdff;color:var(--muted);font-size:12px}.scan-confirm input{width:auto!important;min-height:auto!important;accent-color:var(--green)}
+.trace-inbound-panel{grid-column:1/-1;margin:0 0 14px;padding:14px;border:1px solid #bfe4f4;border-radius:14px;background:linear-gradient(135deg,#eef9ff,#f8fdff);box-shadow:0 10px 24px rgba(38,139,197,.08)}
+.trace-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.trace-panel-head strong{display:block;color:#163847;font-size:15px}
+.trace-panel-head span{display:block;margin-top:3px;color:var(--muted);font-size:12px}
+.trace-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.trace-step{display:flex;align-items:center;gap:7px;padding:8px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--muted);font-size:12px}
+.trace-step b{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#edf4f7;color:#55707e;font-size:11px}
+.trace-step.active{border-color:#7bc8ec;background:#effaff;color:#216f99}
+.trace-step.active b{background:#268bc5;color:#fff}
+.trace-step.done{border-color:#bfe9db;background:#edf9f4;color:#087f68}
+.trace-step.done b{background:#18a76f;color:#fff}
+.trace-step.blocked{border-color:#f1b8b8;background:#fff1f1;color:#bd4545}
+.trace-step.blocked b{background:#df5a58;color:#fff}
+.trace-hint{margin:10px 0 0;color:#587483;font-size:12px;line-height:1.5}
+.trace-inbound-panel.blocked{border-color:#f1b8b8;background:#fff6f6}
+@media(max-width:760px){.trace-panel-head{align-items:flex-start;flex-direction:column}.trace-flow{grid-template-columns:1fr}.trace-step{justify-content:flex-start}}
