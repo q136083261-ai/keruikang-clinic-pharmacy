@@ -247,6 +247,14 @@ function findLocalMedicine(parsed, rawBarcode) {
 }
 
 async function externalLookup(barcode, parsed) {
+  const approvalNo = window.clinicNormalizeApprovalNo?.(parsed?.approvalNo || parsed?.code || "");
+  const proxyItem = await window.clinicExternalDrugLookup?.({
+    barcode,
+    traceCode: parsed?.traceFullCode || parsed?.traceDrugCode || "",
+    approvalNo
+  });
+  if (proxyItem?.name) return proxyItem;
+
   const endpoint = localStorage.getItem("clinic-barcode-api-url");
   if (!endpoint) return null;
 
@@ -340,16 +348,17 @@ async function lookupBarcode(target = "medicine") {
   result.innerHTML = '<div class="lookup-loading">\u6b63\u5728\u89e3\u6790\u6761\u7801\u5e76\u67e5\u8be2\u836f\u54c1\u8d44\u6599...</div>';
 
   const local = findLocalMedicine(parsed, raw);
-  const item = local || await externalLookup(barcode, parsed) || demoBarcodeCatalog[barcode] || {};
+  const reference = null;
+  const item = local || reference || await externalLookup(barcode, parsed) || demoBarcodeCatalog[barcode] || {};
 
   if (target === "stock") {
-    fillStockForm(item, parsed, local ? "\u8bca\u6240\u5df2\u6709\u836f\u54c1\u5e93" : item.name ? "\u836f\u54c1\u8d44\u6599\u5e93" : "\u6761\u7801\u89e3\u6790");
+    fillStockForm(item, parsed, local ? "\u8bca\u6240\u5df2\u6709\u836f\u54c1\u5e93" : reference ? "\u672c\u5730\u836f\u54c1\u8d44\u6599\u5e93" : item.name ? "\u836f\u54c1\u8d44\u6599\u5e93" : "\u6761\u7801\u89e3\u6790");
     window.dispatchEvent(new CustomEvent("clinic:barcode-lookup-complete"));
     return;
   }
 
   if (item.name || parsed.batchNo || parsed.expiryDate || parsed.traceDrugCode) {
-    fillMedicineForm(item, parsed, local ? "\u8bca\u6240\u5df2\u6709\u836f\u54c1\u5e93" : item.name ? "\u836f\u54c1\u8d44\u6599\u5e93" : "\u6761\u7801\u89e3\u6790");
+    fillMedicineForm(item, parsed, local ? "\u8bca\u6240\u5df2\u6709\u836f\u54c1\u5e93" : reference ? "\u672c\u5730\u836f\u54c1\u8d44\u6599\u5e93" : item.name ? "\u836f\u54c1\u8d44\u6599\u5e93" : "\u6761\u7801\u89e3\u6790");
     window.dispatchEvent(new CustomEvent("clinic:barcode-lookup-complete"));
     return;
   }
