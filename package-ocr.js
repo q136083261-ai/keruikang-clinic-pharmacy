@@ -27,18 +27,20 @@
     expiryDate: "\u6709\u6548\u671f"
   };
 
-  const panel = document.createElement("div");
-  panel.className = "package-ocr-panel wide";
-  panel.innerHTML = `
-    <div class="package-ocr-actions">
-      <button class="btn secondary" type="button" id="packageOcrButton">${label.photo}</button>
-      <button class="btn secondary" type="button" id="packageTextButton">${label.paste}</button>
-      <input id="packageOcrFile" type="file" accept="image/*" capture="environment" hidden>
-    </div>
-    <textarea id="packageOcrText" rows="4" placeholder="${label.textPlaceholder}" hidden></textarea>
-    <div class="lookup-result" id="packageOcrResult"></div>
-  `;
-  barcodeRow.insertAdjacentElement("afterend", panel);
+  if (!document.getElementById("packageOcrButton")) {
+    const panel = document.createElement("div");
+    panel.className = "package-ocr-panel wide";
+    panel.innerHTML = `
+      <div class="package-ocr-actions">
+        <button class="btn secondary" type="button" id="packageOcrButton">${label.photo}</button>
+        <button class="btn secondary" type="button" id="packageTextButton">${label.paste}</button>
+        <input id="packageOcrFile" type="file" accept="image/*" capture="environment" hidden>
+      </div>
+      <textarea id="packageOcrText" rows="4" placeholder="${label.textPlaceholder}" hidden></textarea>
+      <div class="lookup-result" id="packageOcrResult"></div>
+    `;
+    barcodeRow.insertAdjacentElement("afterend", panel);
+  }
 
   const fileInput = document.getElementById("packageOcrFile");
   const textBox = document.getElementById("packageOcrText");

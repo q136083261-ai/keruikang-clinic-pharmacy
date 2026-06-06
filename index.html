@@ -171,6 +171,15 @@
         <label><span>药品名称 *</span><input name="name" required placeholder="例如：阿莫西林胶囊"></label>
         <label><span>药品编码 *</span><input name="code" required placeholder="例如：YP-001"></label>
         <label class="wide barcode-entry"><span>药品条形码 / GS1 批次码</span><div class="barcode-line"><input class="barcode-scan-input" name="barcode" id="medicineBarcode" placeholder="支持扫码枪、药品条码、GS1/UDI组合码"><button type="button" class="btn secondary" id="lookupBarcode">⌕ 自动适配</button><button type="button" class="btn secondary" id="startBarcodeScanner" data-scan-target="medicineBarcode">▣ 摄像头扫码</button></div><small>可解析药品条码、批号 LOT、生产日期、有效期、数量。外部数据库资料缺失时仍可自动填入批次信息。</small></label>
+        <div class="wide package-ocr-panel">
+          <div class="package-ocr-actions">
+            <button class="btn secondary" type="button" id="packageOcrButton">识别包装照片</button>
+            <button class="btn secondary" type="button" id="packageTextButton">粘贴包装文字识别</button>
+            <input id="packageOcrFile" type="file" accept="image/*" capture="environment" hidden>
+          </div>
+          <textarea id="packageOcrText" rows="4" placeholder="也可以把包装上的文字粘贴到这里，例如：药名、规格、厂家、批号、生产日期、有效期。" hidden></textarea>
+          <div class="lookup-result" id="packageOcrResult"></div>
+        </div>
         <div class="wide lookup-result" id="lookupResult"></div>
         <label class="wide scan-confirm"><input type="checkbox" name="scanConfirmed"><span>我已核对药品包装、名称、规格、批号、生产日期和有效期</span></label>
         <label><span>药品分类 *</span><select name="category" required><option>西药</option><option>中成药</option><option>外用药</option><option>医疗耗材</option><option>其他</option></select></label>
