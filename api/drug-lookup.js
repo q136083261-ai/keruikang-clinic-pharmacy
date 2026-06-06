@@ -48,6 +48,15 @@ async function lookupByJisu(req) {
   const barcode = req.query.barcode || req.query.traceCode || "";
   const name = req.query.name || "";
 
+  const detailAttempts = [];
+  if (approvalNo) detailAttempts.push(`${base}/detail?appkey=${encodeURIComponent(appkey)}&approval_num=${encodeURIComponent(approvalNo)}`);
+  if (barcode) detailAttempts.push(`${base}/detail?appkey=${encodeURIComponent(appkey)}&barcode=${encodeURIComponent(barcode)}`);
+  for (const url of detailAttempts) {
+    const body = await fetchJson(url);
+    const normalized = normalizeDrug(body?.result || body?.data);
+    if (normalized) return normalized;
+  }
+
   const attempts = [];
   if (approvalNo) attempts.push(`${base}/query?appkey=${encodeURIComponent(appkey)}&approval_num=${encodeURIComponent(approvalNo)}`);
   if (barcode) attempts.push(`${base}/query?appkey=${encodeURIComponent(appkey)}&barcode=${encodeURIComponent(barcode)}`);
@@ -57,6 +66,11 @@ async function lookupByJisu(req) {
     const body = await fetchJson(url);
     const list = body?.result?.list || body?.result || body?.data?.list || body?.data;
     const item = Array.isArray(list) ? list[0] : list;
+    if (item?.medicine_id) {
+      const detail = await fetchJson(`${base}/detail?appkey=${encodeURIComponent(appkey)}&medicine_id=${encodeURIComponent(item.medicine_id)}`);
+      const normalizedDetail = normalizeDrug(detail?.result || detail?.data);
+      if (normalizedDetail) return normalizedDetail;
+    }
     const normalized = normalizeDrug(item);
     if (normalized) return normalized;
   }
