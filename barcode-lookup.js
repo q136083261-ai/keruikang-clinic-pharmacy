@@ -229,6 +229,41 @@ function normalizeMasterMedicine(medicine) {
   };
 }
 
+function formatDraftExpiry(draft) {
+  if (!draft?.expiryDate) return "";
+  return draft.expiryPrecision === "month" ? String(draft.expiryDate).slice(0, 7) : String(draft.expiryDate).slice(0, 10);
+}
+
+function applyBatchDraftToForm(draft) {
+  if (!draft) return;
+  const expiryForInput = draft.expiryDate ? String(draft.expiryDate).slice(0, 10) : "";
+  setField(medicineEntryForm, "productionDate", draft.productionDate ? String(draft.productionDate).slice(0, 10) : "");
+  setField(medicineEntryForm, "expiryDate", expiryForInput);
+  setField(medicineEntryForm, "unit", draft.unit);
+  setField(medicineEntryForm, "salePrice", draft.retailPrice);
+  medicineEntryForm.dataset.batchDraftId = draft.id || "";
+  medicineEntryForm.dataset.batchDraftExpiryPrecision = draft.expiryPrecision || "";
+  const displayExpiry = formatDraftExpiry(draft);
+  const lines = [
+    "\u5df2\u4ece Excel \u5bfc\u5165\u53c2\u8003\u8d44\u6599\u5e26\u51fa\u6709\u6548\u671f\uff0c\u8bf7\u6309\u836f\u76d2\u5b9e\u7269\u6838\u5bf9\u6279\u53f7\u3001\u751f\u4ea7\u65e5\u671f\u3001\u6709\u6548\u671f\u548c\u6570\u91cf\u540e\u518d\u5165\u5e93\u3002",
+    displayExpiry ? `\u53c2\u8003\u6548\u671f\uff1a${displayExpiry}${draft.expiryPrecision === "month" ? "\uff08\u6708\u7cbe\u5ea6\uff09" : ""}` : "",
+    draft.productionDate ? `\u53c2\u8003\u751f\u4ea7\u65e5\u671f\uff1a${String(draft.productionDate).slice(0, 10)}` : ""
+  ].filter(Boolean);
+  lookupResult.innerHTML = resultHtml("lookup-warning", "\u6765\u81ea Excel \u5bfc\u5165\u53c2\u8003\u8d44\u6599\uff0c\u8bf7\u6838\u5bf9", lines);
+}
+
+async function applyLatestBatchDraft(medicineId) {
+  if (!medicineId || !window.KERUIKANG_CLOUD_INVENTORY?.getLatestBatchDraft) return null;
+  try {
+    const draft = await window.KERUIKANG_CLOUD_INVENTORY.getLatestBatchDraft(medicineId);
+    if (draft) applyBatchDraftToForm(draft);
+    return draft;
+  } catch (error) {
+    console.warn("batch draft lookup failed", error);
+    return null;
+  }
+}
+
 function fillMedicineMaster(medicine, source = "本地药品主档") {
   const master = normalizeMasterMedicine(medicine);
   if (!master?.name) return null;
@@ -242,6 +277,7 @@ function fillMedicineMaster(medicine, source = "本地药品主档") {
   setField(medicineEntryForm, "salePrice", master.salePrice);
   setField(medicineEntryForm, "minStock", master.minStock);
   medicineEntryForm.dataset.masterSource = source;
+  applyLatestBatchDraft(master.id);
   return master;
 }
 
@@ -533,18 +569,21 @@ function fillMedicineForm(item, parsed, source) {
   setField(medicineEntryForm, "productionDate", parsed.productionDate || medicine.productionDate);
   setField(medicineEntryForm, "expiryDate", parsed.expiryDate || medicine.expiryDate);
   setField(medicineEntryForm, "quantity", parsed.quantity || medicine.quantity);
+  if (medicine.id) applyLatestBatchDraft(medicine.id);
 
   const status = setScanState(medicineEntryForm, lookupResult, scanStatus(medicineEntryForm, "medicine", medicine, parsed));
-  lookupResult.innerHTML = resultHtml(
-    status.state === "success" ? "lookup-success" : "lookup-warning",
-    `${status.title}`,
-    [
-      status.detail,
-      `${medicine.name || "\u5f85\u8865\u836f\u54c1\u540d\u79f0"} · ${medicine.spec || "\u5f85\u8865\u89c4\u683c"} · ${medicine.manufacturer || "\u5f85\u8865\u5382\u5bb6"}`,
-      `\u8bc6\u522b\u7801 ${parsed.traceDrugCode || parsed.gtin || parsed.barcode || "-"}${parsed.traceSerialNo ? ` · \u5e8f\u5217\u53f7 ${parsed.traceSerialNo}` : ""}${parsed.batchNo ? ` · \u6279\u53f7 ${parsed.batchNo}` : ""}${parsed.expiryDate ? ` · \u6709\u6548\u671f ${parsed.expiryDate}` : ""}`,
-      `\u6765\u6e90\uff1a${source}\u3002\u4fdd\u5b58\u524d\u8bf7\u6838\u5bf9\u5305\u88c5\u3001\u6279\u53f7\u548c\u6709\u6548\u671f\u3002`
-    ]
-  );
+  if (!medicine.id || parsed.batchNo || parsed.expiryDate) {
+    lookupResult.innerHTML = resultHtml(
+      status.state === "success" ? "lookup-success" : "lookup-warning",
+      `${status.title}`,
+      [
+        status.detail,
+        `${medicine.name || "\u5f85\u8865\u836f\u54c1\u540d\u79f0"} · ${medicine.spec || "\u5f85\u8865\u89c4\u683c"} · ${medicine.manufacturer || "\u5f85\u8865\u5382\u5bb6"}`,
+        `\u8bc6\u522b\u7801 ${parsed.traceDrugCode || parsed.gtin || parsed.barcode || "-"}${parsed.traceSerialNo ? ` · \u5e8f\u5217\u53f7 ${parsed.traceSerialNo}` : ""}${parsed.batchNo ? ` · \u6279\u53f7 ${parsed.batchNo}` : ""}${parsed.expiryDate ? ` · \u6709\u6548\u671f ${parsed.expiryDate}` : ""}`,
+        `\u6765\u6e90\uff1a${source}\u3002\u4fdd\u5b58\u524d\u8bf7\u6838\u5bf9\u5305\u88c5\u3001\u6279\u53f7\u548c\u6709\u6548\u671f\u3002`
+      ]
+    );
+  }
 }
 
 function fillStockForm(item, parsed, source) {

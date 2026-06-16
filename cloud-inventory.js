@@ -165,6 +165,24 @@
     if (movementError) throw movementError;
 
     data.medicines = (medicines || []).map(medicine => mapMedicine(medicine, batches || []));
+    try {
+      const { data: drafts, error: draftError } = await client
+        .from("medicine_batch_drafts")
+        .select("id,medicine_id,internal_code,name,manufacturer,batch_no,production_date,production_precision,expiry_date,expiry_precision,quantity,unit,retail_price,review_notes,source,used_for_inbound")
+        .order("expiry_date", { ascending: false, nullsFirst: false });
+      if (!draftError) {
+        const latestDraftByMedicine = new Map();
+        (drafts || []).forEach(draft => {
+          if (!draft.medicine_id || latestDraftByMedicine.has(draft.medicine_id)) return;
+          latestDraftByMedicine.set(draft.medicine_id, mapBatchDraft(draft));
+        });
+        data.medicines.forEach(medicine => {
+          medicine.batchDraft = latestDraftByMedicine.get(medicine.id) || null;
+        });
+      }
+    } catch (error) {
+      console.warn("medicine_batch_drafts optional read skipped", error);
+    }
     const catalogMap = new Map((catalog || []).map(item => [item.medicine_id, item.visible]));
     data.medicines.forEach(medicine => {
       medicine.publicVisible = catalogMap.get(medicine.id) === true;
@@ -205,6 +223,28 @@
     };
   }
 
+  function mapBatchDraft(row) {
+    if (!row) return null;
+    return {
+      id: row.id,
+      medicineId: row.medicine_id || "",
+      internalCode: row.internal_code || "",
+      name: row.name || "",
+      manufacturer: row.manufacturer || "",
+      batchNo: row.batch_no || "",
+      productionDate: row.production_date || "",
+      productionPrecision: row.production_precision || "",
+      expiryDate: row.expiry_date || "",
+      expiryPrecision: row.expiry_precision || "",
+      quantity: row.quantity ?? "",
+      unit: row.unit || "",
+      retailPrice: row.retail_price ?? "",
+      reviewNotes: row.review_notes || "",
+      source: row.source || "excel_import_review",
+      usedForInbound: row.used_for_inbound === true
+    };
+  }
+
   async function searchMedicineMasters(keyword) {
     if (!client || !keyword || String(keyword).trim().length < 1) return [];
     const term = String(keyword).trim().replace(/[%_,]/g, "");
@@ -229,6 +269,22 @@
       .maybeSingle();
     if (error) throw error;
     return mapMedicineMaster(row?.medicines);
+  }
+
+  async function getLatestBatchDraft(medicineId) {
+    if (!client || !medicineId) return null;
+    const { data: row, error } = await client
+      .from("medicine_batch_drafts")
+      .select("id,medicine_id,internal_code,name,manufacturer,batch_no,production_date,production_precision,expiry_date,expiry_precision,quantity,unit,retail_price,review_notes,source,used_for_inbound")
+      .eq("medicine_id", medicineId)
+      .order("expiry_date", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      if (/does not exist|schema cache/i.test(error.message || "")) return null;
+      throw error;
+    }
+    return mapBatchDraft(row);
   }
 
   async function upsertMedicineMapping({ medicineId, codeType, codeValue, source = "manual_confirmed", confidence = 1 }) {
@@ -448,6 +504,7 @@
     rpc,
     searchMedicineMasters,
     findMedicineByMapping,
+    getLatestBatchDraft,
     upsertMedicineMapping
   };
 })();
