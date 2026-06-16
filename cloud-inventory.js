@@ -245,6 +245,38 @@
     };
   }
 
+  function manualInternalCode() {
+    const stamp = new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 14);
+    const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+    return `MED-MAN-${stamp}-${suffix}`;
+  }
+
+  async function createMedicineMaster(values) {
+    if (!client) throw new Error("Supabase 未连接，不能新增药品主档");
+    const name = String(values?.name || "").trim();
+    if (!name) throw new Error("请填写药品名称");
+    const payload = {
+      internal_code: values.internalCode || manualInternalCode(),
+      name,
+      manufacturer: String(values.manufacturer || "").trim() || null,
+      category: String(values.category || "").trim() || "其他",
+      specification: String(values.specification || values.spec || "").trim() || null,
+      default_unit: String(values.defaultUnit || values.unit || "").trim() || "盒",
+      retail_price: values.retailPrice === "" || values.retailPrice == null ? null : money(values.retailPrice),
+      low_stock_threshold: values.lowStockThreshold === "" || values.lowStockThreshold == null
+        ? 20
+        : Number(values.lowStockThreshold),
+      active: true
+    };
+    const { data: row, error } = await client
+      .from("medicines")
+      .insert(payload)
+      .select("id,internal_code,name,manufacturer,category,specification,default_unit,retail_price,low_stock_threshold,active")
+      .single();
+    if (error) throw error;
+    return mapMedicineMaster(row);
+  }
+
   async function searchMedicineMasters(keyword) {
     if (!client || !keyword || String(keyword).trim().length < 1) return [];
     const term = String(keyword).trim().replace(/[%_,]/g, "");
@@ -367,31 +399,27 @@
     if (!cloudMode()) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    const stockType = new FormData(event.target).get("type");
-    if (stockType === "in" && window.KERUIKANG_VALIDATE_SCAN_BEFORE_SAVE &&
-        !window.KERUIKANG_VALIDATE_SCAN_BEFORE_SAVE(event.target, "stock")) return;
 
     try {
       const values = formValues(event.target);
       const quantity = assertPositiveQuantity(values.quantity);
       if (values.type === "in") {
+        if (!values.medicineId) throw new Error("请选择药品");
+        if (!String(values.batchNo || "").trim()) throw new Error("请填写批号");
         assertDates(values.productionDate, values.expiryDate);
-        if (values.stockBarcode) {
-          await rpc("rpc_trace_inbound", {
-            p_payload: buildTraceInboundPayload(values, event.target, values.medicineId)
-          });
-        } else {
-          await rpc("rpc_stock_in", {
-            p_medicine_id: values.medicineId,
-            p_batch_number: values.batchNo,
-            p_quantity: quantity,
-            p_production_date: values.productionDate,
-            p_expiry_date: values.expiryDate,
-            p_unit: byId(values.medicineId)?.unit || "盒",
-            p_location: byId(values.medicineId)?.location || "药房默认库位",
-            p_note: values.note || "扫码/手动入库"
-          });
-        }
+        const confirmed = event.target.elements.manualStockConfirmed?.checked ||
+          event.target.elements.stockScanConfirmed?.checked;
+        if (!confirmed) throw new Error("请先勾选核对确认");
+        await rpc("rpc_manual_stock_in_v1", {
+          p_medicine_id: values.medicineId,
+          p_batch_number: values.batchNo,
+          p_quantity: quantity,
+          p_production_date: values.productionDate,
+          p_expiry_date: values.expiryDate,
+          p_unit: values.unit || byId(values.medicineId)?.unit || "盒",
+          p_retail_price: values.salePrice ? money(values.salePrice) : null,
+          p_note: values.note || "手工入库"
+        });
       } else {
         await rpc("rpc_stock_out", {
           p_medicine_id: values.medicineId,
@@ -404,7 +432,7 @@
       event.target.reset();
       document.getElementById("batchFields").style.display = "block";
       closeModals();
-      cloudToast(values.type === "in" ? "云端入库成功" : "云端出库成功");
+      cloudToast(values.type === "in" ? "手工入库成功" : "云端出库成功");
     } catch (error) {
       console.error(error);
       cloudToast("库存事务失败：" + error.message);
@@ -419,14 +447,14 @@
     try {
       const values = formValues(event.target);
       assertDates(values.productionDate, values.expiryDate);
-      await rpc("rpc_stock_in", {
+      await rpc("rpc_manual_stock_in_v1", {
         p_medicine_id: values.medicineId,
         p_batch_number: values.batchNo,
         p_quantity: assertPositiveQuantity(values.quantity),
         p_production_date: values.productionDate,
         p_expiry_date: values.expiryDate,
         p_unit: byId(values.medicineId)?.unit || "盒",
-        p_location: byId(values.medicineId)?.location || "药房默认库位",
+        p_retail_price: byId(values.medicineId)?.salePrice || null,
         p_note: "采购入库"
       });
       await refreshCloudInventory();
@@ -503,6 +531,7 @@
     refresh: refreshCloudInventory,
     rpc,
     searchMedicineMasters,
+    createMedicineMaster,
     findMedicineByMapping,
     getLatestBatchDraft,
     upsertMedicineMapping
