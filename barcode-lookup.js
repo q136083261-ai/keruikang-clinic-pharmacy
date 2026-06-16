@@ -174,6 +174,83 @@ function setField(form, name, value) {
   field.value = String(value);
 }
 
+function ensureSelectedMedicineField() {
+  if (!medicineEntryForm || medicineEntryForm.elements.selectedMedicineId) return;
+  const hidden = document.createElement("input");
+  hidden.type = "hidden";
+  hidden.name = "selectedMedicineId";
+  medicineEntryForm.appendChild(hidden);
+}
+
+function selectedMedicineId(value = undefined) {
+  ensureSelectedMedicineField();
+  const field = medicineEntryForm.elements.selectedMedicineId;
+  if (value !== undefined) {
+    field.value = value || "";
+    medicineEntryForm.dataset.selectedMedicineId = value || "";
+  }
+  return field.value || medicineEntryForm.dataset.selectedMedicineId || "";
+}
+
+function parseDrugCodeForTrace(rawCode = "") {
+  const raw = String(rawCode || "").trim();
+  const digits = raw.replace(/\D/g, "");
+  if (/^8\d{19}$/.test(digits)) {
+    return {
+      codeType: "MSFX_20",
+      traceCode: digits,
+      productResourceCode: digits.slice(0, 7),
+      serialNo: digits.slice(7)
+    };
+  }
+  return {
+    codeType: /^\d{13}$/.test(digits) ? "EAN13" : "UNKNOWN",
+    traceCode: "",
+    productResourceCode: "",
+    serialNo: ""
+  };
+}
+
+window.KERUIKANG_PARSE_DRUG_CODE = parseDrugCodeForTrace;
+
+function normalizeMasterMedicine(medicine) {
+  if (!medicine) return null;
+  return {
+    id: medicine.id || "",
+    name: medicine.name || medicine.drugName || "",
+    code: medicine.internalCode || medicine.internal_code || medicine.code || medicine.approvalNo || "",
+    category: medicine.category || "西药",
+    spec: medicine.spec || medicine.specification || "",
+    unit: medicine.unit || medicine.default_unit || "盒",
+    manufacturer: medicine.manufacturer || "",
+    salePrice: medicine.salePrice ?? medicine.retail_price ?? "",
+    minStock: medicine.minStock ?? medicine.low_stock_threshold ?? 20,
+    productResourceCode: medicine.productResourceCode || ""
+  };
+}
+
+function fillMedicineMaster(medicine, source = "本地药品主档") {
+  const master = normalizeMasterMedicine(medicine);
+  if (!master?.name) return null;
+  selectedMedicineId(master.id || "");
+  setField(medicineEntryForm, "name", master.name);
+  setField(medicineEntryForm, "code", master.code);
+  setField(medicineEntryForm, "category", master.category);
+  setField(medicineEntryForm, "spec", master.spec);
+  setField(medicineEntryForm, "unit", master.unit);
+  setField(medicineEntryForm, "manufacturer", master.manufacturer);
+  setField(medicineEntryForm, "salePrice", master.salePrice);
+  setField(medicineEntryForm, "minStock", master.minStock);
+  medicineEntryForm.dataset.masterSource = source;
+  return master;
+}
+
+async function findMappedMedicine(parsed, rawBarcode) {
+  const productCode = parsed.traceDrugCode || parseDrugCodeForTrace(rawBarcode).productResourceCode;
+  if (!productCode || !window.KERUIKANG_CLOUD_INVENTORY?.findMedicineByMapping) return null;
+  return window.KERUIKANG_CLOUD_INVENTORY.findMedicineByMapping("trace_product_code", productCode);
+}
+
 function requiredMissing(form, names) {
   return names.filter(name => !String(form.elements[name]?.value || "").trim());
 }
@@ -329,6 +406,69 @@ function findLocalMedicine(parsed, rawBarcode) {
   return data.medicines.find(medicine => keys.includes(medicine.barcode) || keys.includes(medicine.code));
 }
 
+function setupMedicineMasterSearch() {
+  const nameInput = medicineEntryForm?.elements?.name;
+  if (!nameInput || nameInput.dataset.masterSearchReady) return;
+  nameInput.dataset.masterSearchReady = "true";
+  ensureSelectedMedicineField();
+
+  const list = document.createElement("datalist");
+  list.id = "medicineMasterList";
+  medicineEntryForm.appendChild(list);
+  nameInput.setAttribute("list", list.id);
+
+  const cache = new Map();
+  let timer = null;
+
+  async function search(keyword) {
+    if (!window.KERUIKANG_CLOUD_INVENTORY?.searchMedicineMasters) return [];
+    try {
+      return await window.KERUIKANG_CLOUD_INVENTORY.searchMedicineMasters(keyword);
+    } catch (error) {
+      console.warn("medicine master search failed", error);
+      return [];
+    }
+  }
+
+  function renderOptions(items) {
+    list.innerHTML = "";
+    cache.clear();
+    items.forEach(item => {
+      const master = normalizeMasterMedicine(item);
+      if (!master?.name) return;
+      const key = master.name;
+      if (!cache.has(key)) cache.set(key, master);
+      const option = document.createElement("option");
+      option.value = master.name;
+      option.label = [master.manufacturer, master.category, master.spec, master.unit].filter(Boolean).join(" / ");
+      list.appendChild(option);
+    });
+  }
+
+  nameInput.addEventListener("input", () => {
+    selectedMedicineId("");
+    clearTimeout(timer);
+    const keyword = nameInput.value.trim();
+    const localHit = cache.get(keyword);
+    if (localHit) {
+      fillMedicineMaster(localHit, "本地药品主档");
+      return;
+    }
+    if (keyword.length < 1) return;
+    timer = setTimeout(async () => {
+      const items = await search(keyword);
+      renderOptions(items);
+      const exact = items.find(item => item.name === nameInput.value.trim());
+      if (exact) fillMedicineMaster(exact, "本地药品主档");
+    }, 180);
+  });
+
+  nameInput.addEventListener("change", () => {
+    const hit = cache.get(nameInput.value.trim());
+    if (hit) fillMedicineMaster(hit, "本地药品主档");
+  });
+}
+
 async function externalLookup(barcode, parsed) {
   const approvalNo = window.clinicNormalizeApprovalNo?.(parsed?.approvalNo || parsed?.code || "");
   const proxyItem = await window.clinicExternalDrugLookup?.({
@@ -379,6 +519,7 @@ function fillMedicineForm(item, parsed, source) {
   const medicine = { ...item };
   const barcodeToStore = parsed.traceFullCode || parsed.traceDrugCode || parsed.gtin || parsed.barcode || medicineBarcodeInput.value;
   const isTrace = isFullTraceCode(parsed, barcodeToStore) || parsed.traceDrugCode;
+  if (medicine.id) selectedMedicineId(medicine.id);
   setField(medicineEntryForm, "barcode", barcodeToStore);
   setField(medicineEntryForm, "name", medicine.name);
   setField(medicineEntryForm, "code", medicine.code || medicine.approvalNo || (isTrace ? "" : `BC-${barcodeToStore || Date.now()}`));
@@ -409,6 +550,7 @@ function fillMedicineForm(item, parsed, source) {
 function fillStockForm(item, parsed, source) {
   const barcode = parsed.traceFullCode || parsed.traceDrugCode || parsed.gtin || parsed.barcode || stockBarcodeInput.value.trim();
   const medicine = findLocalMedicine(parsed, stockBarcodeInput.value.trim()) || data.medicines.find(m => m.name === item?.name);
+  if (item?.id) setField(stockEntryForm, "medicineId", item.id);
   if (medicine) setField(stockEntryForm, "medicineId", medicine.id);
   setField(stockEntryForm, "batchNo", parsed.batchNo || item?.batchNo);
   setField(stockEntryForm, "productionDate", parsed.productionDate || item?.productionDate);
@@ -454,6 +596,7 @@ async function lookupBarcode(target = "medicine") {
   }
 
   const local = findLocalMedicine(parsed, raw);
+  const mappedMedicine = local ? null : await findMappedMedicine(parsed, raw);
   const cloudLocal = cloudStatus?.medicine_id ? {
     id: cloudStatus.medicine_id,
     name: cloudStatus.drug_name,
@@ -463,21 +606,31 @@ async function lookupBarcode(target = "medicine") {
   } : null;
   const reference = null;
   const externalItem = await externalLookup(barcode, parsed);
-  if (externalItem?.__lookupError && isFullTraceCode(parsed, raw)) {
+  if (externalItem?.__lookupError && isFullTraceCode(parsed, raw) && !local && !mappedMedicine && !cloudLocal) {
     setLookupState(form, parsed, externalItem, "外部追溯接口", cloudStatus);
     setField(form, "barcode", parsed.traceFullCode);
     setScanState(form, result, { state: "manual" });
-    const message = traceLookupErrorMessage(externalItem);
-    result.innerHTML = resultHtml("lookup-warning", message.title, message.lines);
+    const productCode = parsed.traceDrugCode || parseDrugCodeForTrace(raw).productResourceCode;
+    result.innerHTML = resultHtml("lookup-warning", "\u5df2\u8bc6\u522b\u4e3a\u5b8c\u6574\u8ffd\u6eaf\u7801\uff0c\u4f46\u672c\u5730\u5c1a\u672a\u5efa\u7acb\u8be5\u836f\u54c1\u6807\u8bc6\u7801\u6620\u5c04", [
+      `\u5b8c\u6574\u8ffd\u6eaf\u7801\uff1a${parsed.traceFullCode}`,
+      `\u836f\u54c1\u6807\u8bc6\u7801\uff1a${productCode || "-"}`,
+      "\u8bf7\u9009\u62e9\u836f\u54c1\u4e3b\u6863\uff0c\u4fdd\u5b58\u540e\u7cfb\u7edf\u4f1a\u8bb0\u4f4f " + (productCode || "-") + " \u2192 \u8be5\u836f\u54c1\u3002",
+      "\u5916\u90e8\u8ffd\u6eaf\u63a5\u53e3\u5c1a\u672a\u8fd4\u56de\u836f\u54c1\u8d44\u6599\uff0c\u6279\u53f7\u548c\u6548\u671f\u9700\u8981 OCR \u6216\u4eba\u5de5\u586b\u5199\u3002"
+    ]);
     window.dispatchEvent(new CustomEvent("clinic:barcode-lookup-complete"));
     return;
   }
 
-  const item = local || cloudLocal || reference || (externalItem?.__lookupError ? null : externalItem) || demoBarcodeCatalog[barcode] || {};
-  setLookupState(form, parsed, item, local ? "\u8bca\u6240\u5df2\u6709\u836f\u54c1\u5e93" : cloudLocal ? "\u4e91\u7aef\u672c\u5730\u836f\u54c1\u4e3b\u6863" : item.name ? "\u836f\u54c1\u8d44\u6599\u5e93" : "\u6761\u7801\u89e3\u6790", cloudStatus);
+  const item = local || mappedMedicine || cloudLocal || reference || (externalItem?.__lookupError ? null : externalItem) || demoBarcodeCatalog[barcode] || {};
+  /*
+  const itemSource = local ? "\u8bca\u6240\u5df2\u6709\u836f\u54c1\u5e93" : mappedMedicine ? "本地药品标识码映射" : cloudLocal ? "\u4e91\u7aef\u672c\u5730\u836f\u54c1\u4e3b\u6863" : item.name ? "\u836f\u54c1\u8d44\u6599\u5e93" : "\u6761\u7801\u89e3\u6790";
+  setLookupState(form, parsed, item, itemSource, cloudStatus);
+  */
+  const itemSource = local ? "\u8bca\u6240\u5df2\u6709\u836f\u54c1\u5e93" : mappedMedicine ? "\u672c\u5730\u836f\u54c1\u6807\u8bc6\u7801\u6620\u5c04" : cloudLocal ? "\u4e91\u7aef\u672c\u5730\u836f\u54c1\u4e3b\u6863" : item.name ? "\u836f\u54c1\u8d44\u6599\u5e93" : "\u6761\u7801\u89e3\u6790";
+  setLookupState(form, parsed, item, itemSource, cloudStatus);
 
   if (target === "stock") {
-    fillStockForm(item, parsed, local ? "\u8bca\u6240\u5df2\u6709\u836f\u54c1\u5e93" : cloudLocal ? "\u4e91\u7aef\u672c\u5730\u836f\u54c1\u4e3b\u6863" : item.name ? "\u836f\u54c1\u8d44\u6599\u5e93" : "\u6761\u7801\u89e3\u6790");
+    fillStockForm(item, parsed, itemSource);
     window.dispatchEvent(new CustomEvent("clinic:barcode-lookup-complete"));
     return;
   }
@@ -495,7 +648,7 @@ async function lookupBarcode(target = "medicine") {
   }
 
   if (item.name || parsed.batchNo || parsed.expiryDate) {
-    fillMedicineForm(item, parsed, local ? "\u8bca\u6240\u5df2\u6709\u836f\u54c1\u5e93" : cloudLocal ? "\u4e91\u7aef\u672c\u5730\u836f\u54c1\u4e3b\u6863" : item.name ? "\u836f\u54c1\u8d44\u6599\u5e93" : "\u6761\u7801\u89e3\u6790");
+    fillMedicineForm(item, parsed, itemSource);
     window.dispatchEvent(new CustomEvent("clinic:barcode-lookup-complete"));
     return;
   }
@@ -544,6 +697,7 @@ function validateScanBeforeSave(form, type) {
 }
 
 window.KERUIKANG_VALIDATE_SCAN_BEFORE_SAVE = validateScanBeforeSave;
+setupMedicineMasterSearch();
 document.getElementById("lookupBarcode").onclick = () => lookupBarcode("medicine");
 document.getElementById("lookupStockBarcode").onclick = () => lookupBarcode("stock");
 
@@ -559,7 +713,9 @@ medicineBarcodeInput.addEventListener("input", () => {
   medicineEntryForm.dataset.scanState = "";
   medicineEntryForm.dataset.lookupResult = "";
   medicineEntryForm.dataset.traceCode = "";
+  medicineEntryForm.dataset.productResourceCode = "";
   medicineEntryForm.dataset.duplicateTrace = "";
+  selectedMedicineId("");
   medicineEntryForm.elements.scanConfirmed.checked = false;
 });
 

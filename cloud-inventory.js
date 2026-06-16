@@ -80,7 +80,8 @@
 
   function buildTraceInboundPayload(values, form, forcedMedicineId = "") {
     const lookupResult = readLookupResult(form);
-    const existingMedicine = byId(values.medicineId || forcedMedicineId);
+    const selectedMedicineId = values.selectedMedicineId || form?.dataset?.selectedMedicineId || "";
+    const existingMedicine = byId(values.medicineId || forcedMedicineId || selectedMedicineId);
     const rawCode = values.barcode || values.stockBarcode || lookupResult.rawCode || "";
     return {
       rawCode,
@@ -88,10 +89,10 @@
         ...lookupResult,
         rawCode: lookupResult.rawCode || rawCode,
         traceCode: lookupResult.traceCode || form?.dataset?.traceCode || "",
-        medicineId: lookupResult.medicineId || forcedMedicineId || values.medicineId || ""
+        medicineId: lookupResult.medicineId || forcedMedicineId || values.medicineId || selectedMedicineId || ""
       },
       confirmedFields: {
-        medicineId: forcedMedicineId || values.medicineId || lookupResult.medicineId || "",
+        medicineId: forcedMedicineId || values.medicineId || selectedMedicineId || lookupResult.medicineId || "",
         drugName: values.name || lookupResult.drugName || existingMedicine?.name || "",
         name: values.name || lookupResult.drugName || existingMedicine?.name || "",
         approvalNo: values.code || lookupResult.approvalNo || existingMedicine?.code || "",
@@ -185,6 +186,70 @@
     render();
   }
 
+  function mapMedicineMaster(row) {
+    if (!row) return null;
+    return {
+      id: row.id,
+      name: row.name || "",
+      code: row.internal_code || row.approval_number || "",
+      internalCode: row.internal_code || "",
+      approvalNo: row.approval_number || "",
+      category: row.category || "其他",
+      spec: row.specification || "",
+      unit: row.default_unit || "盒",
+      manufacturer: row.manufacturer || "",
+      salePrice: Number(row.retail_price || 0),
+      minStock: Number(row.low_stock_threshold || 0),
+      disabled: row.active === false,
+      source: "local_medicine_master"
+    };
+  }
+
+  async function searchMedicineMasters(keyword) {
+    if (!client || !keyword || String(keyword).trim().length < 1) return [];
+    const term = String(keyword).trim().replace(/[%_,]/g, "");
+    const { data: rows, error } = await client
+      .from("medicines")
+      .select("id,internal_code,name,manufacturer,category,specification,default_unit,retail_price,low_stock_threshold,active")
+      .or(`name.ilike.%${term}%,manufacturer.ilike.%${term}%,internal_code.ilike.%${term}%`)
+      .eq("active", true)
+      .order("internal_code")
+      .limit(20);
+    if (error) throw error;
+    return (rows || []).map(mapMedicineMaster);
+  }
+
+  async function findMedicineByMapping(codeType, codeValue) {
+    if (!client || !codeType || !codeValue) return null;
+    const { data: row, error } = await client
+      .from("medicine_code_mappings")
+      .select("medicine_id,code_type,code_value,medicines(id,internal_code,name,manufacturer,category,specification,default_unit,retail_price,low_stock_threshold,active)")
+      .eq("code_type", codeType)
+      .eq("code_value", String(codeValue))
+      .maybeSingle();
+    if (error) throw error;
+    return mapMedicineMaster(row?.medicines);
+  }
+
+  async function upsertMedicineMapping({ medicineId, codeType, codeValue, source = "manual_confirmed", confidence = 1 }) {
+    if (!client || !medicineId || !codeType || !codeValue) return null;
+    const user = await signedInUser();
+    const { data: row, error } = await client
+      .from("medicine_code_mappings")
+      .upsert({
+        medicine_id: medicineId,
+        code_type: codeType,
+        code_value: String(codeValue),
+        source,
+        confidence,
+        created_by: user?.id || null
+      }, { onConflict: "code_type,code_value" })
+      .select()
+      .single();
+    if (error) throw error;
+    return row;
+  }
+
   async function createMedicineWithInitialStock(values, form) {
     assertDates(values.productionDate, values.expiryDate);
     assertPositiveQuantity(values.quantity);
@@ -194,6 +259,19 @@
     });
     const medicineId = inbound?.[0]?.medicine_id;
     if (!medicineId) throw new Error("云端入库成功但未返回药品 ID");
+
+    const lookupResult = readLookupResult(form);
+    const selectedMedicineId = values.selectedMedicineId || form?.dataset?.selectedMedicineId || "";
+    const productResourceCode = lookupResult.productResourceCode || form?.dataset?.productResourceCode || "";
+    if (selectedMedicineId && productResourceCode) {
+      await upsertMedicineMapping({
+        medicineId: selectedMedicineId,
+        codeType: "trace_product_code",
+        codeValue: productResourceCode,
+        source: "manual_confirmed",
+        confidence: 1
+      });
+    }
 
     await client.from("public_catalog").upsert({
       medicine_id: medicineId,
@@ -367,6 +445,9 @@
 
   window.KERUIKANG_CLOUD_INVENTORY = {
     refresh: refreshCloudInventory,
-    rpc
+    rpc,
+    searchMedicineMasters,
+    findMedicineByMapping,
+    upsertMedicineMapping
   };
 })();
