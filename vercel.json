@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/mobile",
+      "destination": "/mobile.html"
+    }
+  ]
+}
