@@ -47,6 +47,7 @@
       <div class="header-actions">
         <div class="theme-picker"><button class="btn theme-toggle" id="themeToggle" type="button">◉ 更换颜色</button><div class="theme-menu" id="themeMenu"></div></div>
         <label class="user-switch"><span>当前用户</span><select id="currentUser"></select></label>
+        <button class="btn icon-btn" id="switchAccountBtn" type="button" title="切换账号">切换账号</button>
         <label class="search-box"><span>⌕</span><input id="globalSearch" placeholder="搜索药品名称 / 编码 / 批号"></label>
         <button class="btn secondary" data-open="stockModal" data-permission-any="stock.in,stock.out">出入库</button>
         <button class="btn primary" data-open="medicineModal" data-permission="medicine.create">＋ 录入药品</button>
@@ -280,6 +281,7 @@
   </section>
   <div class="toast" id="toast"></div>
   <script src="app.js"></script>
+  <script src="auth-session.js"></script>
   <script src="permissions.js"></script>
   <script src="extensions.js"></script>
   <script src="advanced.js"></script>

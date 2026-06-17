@@ -26,6 +26,8 @@
 
   window.CLINIC_CLOUD_AUTH_READY = true;
   const client = window.supabase.createClient(config.url, config.publishableKey);
+  window.supabaseClient = client;
+  window.CLINIC_SUPABASE_CLIENT = client;
   const originalSave = save;
   let syncing = false;
   let syncTimer = 0;
@@ -214,6 +216,7 @@
     }
     try {
       await loadCloudState();
+      window.KERUIKANG_AUTH_SESSION?.releaseForceLogin?.();
       toast("登录成功，已连接云端库存");
     } catch (error) {
       status("读取库存失败", "error");
@@ -222,14 +225,22 @@
   };
 
   document.getElementById("logoutBtn").onclick = async function () {
-    await client.auth.signOut();
+    if (window.forceSignOutAndShowLogin) return window.forceSignOutAndShowLogin("logout");
+    await client.auth.signOut({ scope: "local" });
     sessionStorage.removeItem("clinic-login");
+    data.currentUserId = "";
+    save();
     document.getElementById("loginScreen").classList.remove("hidden");
     status("已退出云端账号");
     toast("已退出登录");
   };
 
   client.auth.getSession().then(({ data: sessionData }) => {
+    if (window.KERUIKANG_AUTH_SESSION?.shouldForceLogin?.()) {
+      document.getElementById("loginScreen").classList.remove("hidden");
+      status("请重新登录诊所账号");
+      return;
+    }
     if (sessionData.session) {
       loadCloudState().catch(error => {
         console.error(error);

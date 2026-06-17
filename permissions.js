@@ -21,10 +21,10 @@ function ensureUsers(){
     {id:"u-staff",name:"药房录入员",role:"user",active:true,permissions:[...defaultPermissions]},
     {id:"u-front",name:"前台护士",role:"user",active:true,permissions:["medicine.create","stock.out","alerts.view"]}
   ];
-  if(!data.currentUserId||!data.users.some(u=>u.id===data.currentUserId&&u.active))data.currentUserId="u-admin";
+  if(!data.currentUserId||!data.users.some(u=>u.id===data.currentUserId&&u.active))data.currentUserId="";
 }
-function currentUser(){ensureUsers();return data.users.find(u=>u.id===data.currentUserId)}
-function can(permission){const user=currentUser();return user.role==="admin"||user.permissions.includes(permission)}
+function currentUser(){ensureUsers();return data.users.find(u=>u.id===data.currentUserId)||{id:"",name:"未登录",role:"guest",active:false,permissions:[]}}
+function can(permission){const user=currentUser();return user.role==="admin"||(user.permissions||[]).includes(permission)}
 function canAny(list){return list.split(",").some(can)}
 function requirePermission(permission){if(can(permission))return true;toast("当前用户没有此操作权限，请联系管理员授权");return false}
 function permissionLabel(key){return (permissionDefs.find(x=>x[0]===key)||[key,key])[1]}
@@ -43,7 +43,7 @@ function updateStockTypeAccess(){
 function renderPermissionUI(){
   ensureUsers();
   const select=document.getElementById("currentUser");
-  select.innerHTML=data.users.filter(u=>u.active).map(u=>`<option value="${u.id}" ${u.id===data.currentUserId?"selected":""}>${u.name}${u.role==="admin"?"（管理员）":""}</option>`).join("");
+  select.innerHTML=data.currentUserId?data.users.filter(u=>u.active).map(u=>`<option value="${u.id}" ${u.id===data.currentUserId?"selected":""}>${u.name}${u.role==="admin"?"（管理员）":""}</option>`).join(""):`<option value="">未登录</option>`;
   document.querySelector(".clinic-card strong").textContent=currentUser().name;
   document.querySelectorAll("[data-permission]").forEach(x=>x.classList.toggle("hidden-by-permission",!can(x.dataset.permission)));
   document.querySelectorAll("[data-permission-any]").forEach(x=>x.classList.toggle("hidden-by-permission",!canAny(x.dataset.permissionAny)));
@@ -82,7 +82,7 @@ document.getElementById("stockForm").onsubmit=function(e){
   const type=new FormData(this).get("type");if(!requirePermission("stock."+type)){e.preventDefault();return}
   const before=Date.now();stockSubmit.call(this,e);data.transactions.filter(t=>new Date(t.date)>=before).forEach(t=>t.operator=currentUser().name);save();render();
 };
-document.getElementById("currentUser").onchange=e=>{data.currentUserId=e.target.value;save();closeModals();render();if(!can("users.manage")&&document.getElementById("permissions").classList.contains("active"))switchPage("dashboard");toast("已切换为 "+currentUser().name)};
+document.getElementById("currentUser").onchange=e=>{e.target.value=data.currentUserId||"";if(window.forceSignOutAndShowLogin)return window.forceSignOutAndShowLogin("switch_account");data.currentUserId="";save();closeModals();render();document.getElementById("loginScreen").classList.remove("hidden");toast("请重新登录要切换的账号")};
 const baseResetDemo=document.getElementById("resetDemo").onclick;
 document.getElementById("resetDemo").onclick=e=>{if(currentUser().role!=="admin")return toast("仅管理员可以恢复演示数据");baseResetDemo.call(e.currentTarget,e)};
 document.getElementById("userForm").onsubmit=e=>{e.preventDefault();if(!requirePermission("users.manage"))return;const form=new FormData(e.target),id=form.get("userId"),permissions=form.getAll("permissions"),existing=data.users.find(u=>u.id===id);if(existing){existing.name=form.get("name");existing.active=form.get("active")==="true";existing.permissions=permissions}else data.users.push({id:"u-"+Date.now(),name:form.get("name"),role:"user",active:form.get("active")==="true",permissions});save();render();closeModals();toast(existing?"权限已更新":"用户已新增")};
