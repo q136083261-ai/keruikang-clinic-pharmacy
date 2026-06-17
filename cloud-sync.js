@@ -33,6 +33,7 @@
   let syncTimer = 0;
   let remoteMedicineIds = new Set();
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const nurseRolePermissions = ["medicines.read","medicine.create","medicines.create","inventory.read","stock.in","stock.out","batch.read","batch.create"];
 
   function cloudUser(profile, email) {
     const role = profile?.role || "viewer";
@@ -44,6 +45,7 @@
       active: profile?.active !== false,
       permissions: role === "admin" ? permissionDefs.map(x => x[0]) :
         Array.isArray(profile?.permissions) && profile.permissions.length ? profile.permissions :
+        (role === "nurse" || role === "stock_operator") ? [...nurseRolePermissions] :
         role === "operator" ? [...defaultPermissions] :
         ["alerts.view", "transactions.view"]
     };
@@ -59,7 +61,7 @@
   async function profileFor(user) {
     const { data: profile, error } = await client
       .from("profiles")
-      .select("id,display_name,role,active")
+      .select("id,display_name,role,active,permissions")
       .eq("id", user.id)
       .single();
     if (error) throw error;

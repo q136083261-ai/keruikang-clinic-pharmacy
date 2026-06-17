@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="inventory-transaction.css">
   <link rel="stylesheet" href="manual-stock-in.css">
   <link rel="stylesheet" href="auth-password.css">
+  <link rel="stylesheet" href="mobile-nurse.css">
 </head>
 <body>
   <aside class="sidebar">
@@ -238,6 +239,9 @@
       <input type="hidden" name="userId">
       <div class="form-grid">
         <label><span>用户姓名 *</span><input name="name" required placeholder="例如：前台护士"></label>
+        <label><span>登录邮箱</span><input name="email" type="email" autocomplete="username" placeholder="新建云端账号时填写"></label>
+        <label><span>初始密码</span><input name="password" type="password" autocomplete="new-password" minlength="8" placeholder="至少 8 位，新建账号时填写"></label>
+        <label><span>账号角色</span><select name="role"><option value="nurse">护士</option><option value="manager">医生/管理人员</option><option value="admin">管理员</option></select></label>
         <label><span>账号状态</span><select name="active"><option value="true">启用</option><option value="false">停用</option></select></label>
       </div>
       <div class="form-divider"><span>授予权限</span></div>
@@ -332,6 +336,129 @@
     </form>
   </section>
   <div class="toast" id="toast"></div>
+  <section class="mobile-nurse-app" id="mobileNurseApp" hidden>
+    <header class="mobile-nurse-header">
+      <div>
+        <span class="mobile-kicker">护士工作台</span>
+        <h1>可瑞康诊所</h1>
+        <p id="mobileNurseSubtitle">手工入库、出库和新药建档</p>
+      </div>
+      <button class="mobile-icon-btn" type="button" data-mobile-go="mine">我的</button>
+    </header>
+
+    <main class="mobile-nurse-main">
+      <section class="mobile-panel active" id="mobileHomePanel" data-mobile-panel="home">
+        <div class="mobile-admin-choice" id="mobileAdminChoice" hidden>
+          <button class="mobile-action-card" type="button" id="mobileUseDesktop">
+            <strong>进入管理员后台</strong>
+            <span>查看完整桌面端管理功能</span>
+          </button>
+          <button class="mobile-action-card" type="button" id="mobileUseNurse">
+            <strong>进入护士移动端</strong>
+            <span>只做入库、出库和药品录入</span>
+          </button>
+        </div>
+        <div class="mobile-card-grid">
+          <button class="mobile-action-card" type="button" data-mobile-go="in">
+            <strong>药品入库</strong>
+            <span>进货、补库存、录入批号效期</span>
+          </button>
+          <button class="mobile-action-card" type="button" data-mobile-go="out">
+            <strong>药品出库</strong>
+            <span>发药、销售、消耗库存</span>
+          </button>
+          <button class="mobile-action-card" type="button" data-mobile-go="new">
+            <strong>录入新药品</strong>
+            <span>第一次没有这个药时先建档</span>
+          </button>
+          <button class="mobile-action-card" type="button" data-mobile-go="today">
+            <strong>今日记录</strong>
+            <span>查看今天自己的入库/出库记录</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="mobile-panel" id="mobileStockInPanel" data-mobile-panel="in">
+        <form id="mobileStockInForm" class="mobile-form">
+          <h2>药品入库</h2>
+          <label><span>搜索/选择药品 *</span><input id="mobileInSearch" type="search" autocomplete="off" placeholder="输入药品名、厂家或编码"></label>
+          <div class="mobile-search-results" id="mobileInResults"></div>
+          <input type="hidden" name="medicineId" id="mobileInMedicineId">
+          <div class="mobile-selected-card" id="mobileInSelected" hidden></div>
+          <div class="mobile-reference-note" id="mobileInDraftNote" hidden>来自 Excel 导入参考资料，请按药盒实物核对后再入库。</div>
+          <label><span>入库数量 *</span><input name="quantity" type="number" min="1" inputmode="numeric" required></label>
+          <label><span>批号 *</span><input name="batchNumber" autocomplete="off" required></label>
+          <label><span>生产日期 *</span><input name="productionDate" type="date" required></label>
+          <label><span>有效期至 *</span><input name="expiryDate" type="date" required></label>
+          <label><span>单位</span><input name="unit" autocomplete="off" placeholder="盒"></label>
+          <label><span>零售价，可选</span><input name="retailPrice" type="number" min="0" step="0.01" inputmode="decimal"></label>
+          <label><span>备注，可选</span><textarea name="note" rows="2" placeholder="例如：护士手机端入库"></textarea></label>
+          <label class="mobile-check"><input name="confirmed" type="checkbox" required><span>我已核对本次入库包装、药品、批号、生产日期和有效期</span></label>
+          <div class="mobile-submit-bar"><button class="mobile-primary-btn" type="submit">确认入库</button></div>
+        </form>
+      </section>
+
+      <section class="mobile-panel" id="mobileStockOutPanel" data-mobile-panel="out">
+        <form id="mobileStockOutForm" class="mobile-form">
+          <h2>药品出库</h2>
+          <label><span>搜索/选择药品 *</span><input id="mobileOutSearch" type="search" autocomplete="off" placeholder="输入药品名、厂家或编码"></label>
+          <div class="mobile-search-results" id="mobileOutResults"></div>
+          <input type="hidden" name="medicineId" id="mobileOutMedicineId">
+          <input type="hidden" name="batchId" id="mobileOutBatchId">
+          <div class="mobile-selected-card" id="mobileOutSelected" hidden></div>
+          <label><span>选择批次 *</span><select id="mobileOutBatchSelect" required></select></label>
+          <div class="mobile-readonly-grid">
+            <div><span>当前库存</span><strong id="mobileOutBatchQty">-</strong></div>
+            <div><span>有效期</span><strong id="mobileOutBatchExpiry">-</strong></div>
+          </div>
+          <label><span>出库数量 *</span><input name="quantity" type="number" min="1" inputmode="numeric" required></label>
+          <label><span>出库原因 *</span><select name="reason" required><option>发药</option><option>销售</option><option>报损</option><option>内部使用</option><option>其他</option></select></label>
+          <label><span>备注，可选</span><textarea name="note" rows="2" placeholder="例如：护士手机端出库"></textarea></label>
+          <label class="mobile-check"><input name="confirmed" type="checkbox" required><span>我已核对本次出库药品、批次、数量和原因</span></label>
+          <div class="mobile-submit-bar"><button class="mobile-primary-btn" type="submit">确认出库</button></div>
+        </form>
+      </section>
+
+      <section class="mobile-panel" id="mobileNewMedicinePanel" data-mobile-panel="new">
+        <form id="mobileNewMedicineForm" class="mobile-form">
+          <h2>录入药品/商品</h2>
+          <label><span>药品名称 *</span><input name="name" autocomplete="off" required></label>
+          <label><span>分类 *</span><select name="category" required><option>西药</option><option>中成药</option><option>外用药</option><option>其他</option></select></label>
+          <label><span>规格</span><input name="specification" autocomplete="off" placeholder="例如：3g × 10袋"></label>
+          <label><span>生产厂家</span><input name="manufacturer" autocomplete="off"></label>
+          <label><span>单位</span><input name="unit" value="盒" autocomplete="off"></label>
+          <label><span>零售价，可选</span><input name="retailPrice" type="number" min="0" step="0.01" inputmode="decimal"></label>
+          <label><span>库存预警值</span><input name="lowStockThreshold" type="number" min="0" inputmode="numeric" value="20"></label>
+          <label><span>备注，可选</span><textarea name="note" rows="2"></textarea></label>
+          <div class="mobile-submit-bar"><button class="mobile-primary-btn" type="submit">保存并继续入库</button></div>
+        </form>
+      </section>
+
+      <section class="mobile-panel" id="mobileTodayPanel" data-mobile-panel="today">
+        <h2>今日记录</h2>
+        <div class="mobile-record-list" id="mobileTodayList"></div>
+      </section>
+
+      <section class="mobile-panel" id="mobileMinePanel" data-mobile-panel="mine">
+        <h2>我的</h2>
+        <div class="mobile-selected-card">
+          <strong id="mobileCurrentUserName">未登录</strong>
+          <span id="mobileCurrentUserRole">护士工作台</span>
+        </div>
+        <button class="mobile-secondary-btn" type="button" id="mobileChangePassword">修改密码</button>
+        <button class="mobile-secondary-btn" type="button" id="mobileSwitchAccount">切换账号</button>
+        <button class="mobile-danger-btn" type="button" id="mobileLogout">退出登录</button>
+      </section>
+    </main>
+
+    <nav class="mobile-bottom-nav">
+      <button class="active" type="button" data-mobile-go="home">首页</button>
+      <button type="button" data-mobile-go="in">入库</button>
+      <button type="button" data-mobile-go="out">出库</button>
+      <button type="button" data-mobile-go="new">新药</button>
+      <button type="button" data-mobile-go="mine">我的</button>
+    </nav>
+  </section>
   <script src="app.js"></script>
   <script src="auth-session.js"></script>
   <script src="permissions.js"></script>
@@ -350,6 +477,7 @@
   <script src="cloud-sync.js"></script>
   <script src="auth-password.js"></script>
   <script src="cloud-inventory.js"></script>
+  <script src="mobile-nurse.js"></script>
   <script src="batch-drafts-ui.js"></script>
   <script src="stock-wizard.js"></script>
   <script src="manual-stock-in.js"></script>
