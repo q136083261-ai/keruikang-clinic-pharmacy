@@ -4,12 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>可瑞康诊所 · 药房管理</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0ea5e9">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="可瑞康护士端">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="theme-red.css">
   <link rel="stylesheet" href="clinic-polish.css">
   <link rel="stylesheet" href="inventory-transaction.css">
   <link rel="stylesheet" href="manual-stock-in.css">
   <link rel="stylesheet" href="auth-password.css">
+  <link rel="stylesheet" href="install-app.css">
   <link rel="stylesheet" href="mobile-nurse.css">
 </head>
 <body>
@@ -288,7 +296,7 @@
     <p class="scanner-status" id="scannerStatus">正在启动摄像头...</p>
   </section>
   <section class="login-screen" id="loginScreen">
-    <form class="login-card" id="loginForm"><div class="brand-mark">医</div><h2>可瑞康诊所</h2><p>药房管理系统</p><select name="userId" id="loginUser" hidden></select><label><span>登录邮箱</span><input name="email" type="email" placeholder="请输入诊所账号邮箱" autocomplete="username" required></label><label><span>密码</span><input name="password" type="password" placeholder="请输入密码" autocomplete="current-password" required></label><button class="btn primary">登录系统</button><button class="forgot-password-link" id="forgotPasswordBtn" type="button">忘记密码？</button><small>账号由诊所管理员创建。库存数据将安全同步至云端。</small></form>
+    <form class="login-card" id="loginForm"><div class="brand-mark">医</div><h2>可瑞康诊所</h2><p class="login-subtitle">药房管理系统</p><select name="userId" id="loginUser" hidden></select><label><span>账号/邮箱</span><input name="email" type="email" placeholder="请输入诊所账号邮箱" autocomplete="username" required></label><label><span>密码</span><input name="password" type="password" placeholder="请输入密码" autocomplete="current-password" required></label><label class="remember-account"><input name="rememberEmail" id="rememberEmail" type="checkbox"><span>记住账号</span></label><button class="btn primary">登录系统</button><div class="login-link-row"><button class="forgot-password-link" id="loginSwitchAccountBtn" type="button">切换账号</button><button class="forgot-password-link" id="forgotPasswordBtn" type="button">忘记密码？</button></div><small>账号由诊所管理员创建。库存数据将安全同步至云端。</small><em class="mobile-login-version">可瑞康护士端 v1.0</em></form>
   </section>
   <section class="modal" id="changePasswordModal">
     <div class="modal-head"><div><h2>修改密码</h2><p>修改成功后需要重新登录。</p></div><button class="close-btn" data-close>×</button></div>
@@ -478,6 +486,7 @@
   <script src="auth-password.js"></script>
   <script src="cloud-inventory.js"></script>
   <script src="mobile-nurse.js"></script>
+  <script src="install-app.js"></script>
   <script src="batch-drafts-ui.js"></script>
   <script src="stock-wizard.js"></script>
   <script src="manual-stock-in.js"></script>

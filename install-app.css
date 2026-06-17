@@ -1,0 +1,150 @@
+.pwa-mobile-entry .login-screen {
+  place-items: stretch;
+  overflow: auto;
+  padding: 18px 14px calc(24px + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 18% 0%, rgba(91, 197, 255, 0.34), transparent 32%),
+    linear-gradient(180deg, #e8f7ff 0%, #f7fbff 48%, #ffffff 100%);
+}
+
+.pwa-mobile-entry .login-card {
+  align-self: center;
+  justify-self: center;
+  width: min(430px, 100%);
+  border: 1px solid #cdeafd;
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba(14, 116, 144, 0.18);
+}
+
+.pwa-mobile-entry .login-card .brand-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+  color: #fff;
+}
+
+.pwa-mobile-entry .login-card h2 {
+  font-size: 25px;
+}
+
+.pwa-mobile-entry .login-card input {
+  min-height: 52px;
+  border-radius: 16px;
+  font-size: 16px;
+}
+
+.pwa-mobile-entry .login-card .btn {
+  min-height: 54px;
+  border-radius: 18px;
+  font-size: 17px;
+}
+
+.remember-account {
+  display: flex !important;
+  align-items: center;
+  gap: 9px;
+  color: #466178;
+}
+
+.remember-account input {
+  width: 18px !important;
+  min-height: 18px !important;
+  accent-color: #0ea5e9;
+}
+
+.login-link-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 6px 0 10px;
+}
+
+.forgot-password-link {
+  background: none;
+  color: #0b7fbd;
+  font-weight: 700;
+}
+
+.mobile-login-version {
+  display: block;
+  margin-top: 12px;
+  color: #7b8fa3;
+  font-size: 12px;
+  font-style: normal;
+  text-align: center;
+}
+
+.pwa-install-box {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #cbe8f8;
+  border-radius: 20px;
+  background: #f1fbff;
+}
+
+.pwa-install-box strong,
+.pwa-install-box span {
+  display: block;
+}
+
+.pwa-install-box strong {
+  color: #16415f;
+}
+
+.pwa-install-box span,
+.pwa-install-guide li,
+.pwa-install-modal p {
+  color: #5f7488;
+}
+
+.pwa-install-button,
+.pwa-admin-install-button {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: #fff;
+  font-weight: 800;
+}
+
+.pwa-admin-install-button {
+  width: auto;
+  margin-top: 0;
+  padding: 0 15px;
+}
+
+.pwa-install-guide {
+  margin: 12px 0 0;
+  padding-left: 18px;
+}
+
+.pwa-install-guide li {
+  margin: 5px 0;
+}
+
+.pwa-install-modal .qr-wrap {
+  display: grid;
+  place-items: center;
+  margin: 15px 0;
+  padding: 14px;
+  border-radius: 18px;
+  background: #f4fbff;
+}
+
+.pwa-install-modal .qr-wrap img {
+  width: min(260px, 72vw);
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.pwa-install-url {
+  word-break: break-all;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #edf7fd;
+  color: #0a699f;
+  font-weight: 700;
+}

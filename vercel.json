@@ -1,4 +1,17 @@
 {
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "keruikang.com"
+        }
+      ],
+      "destination": "https://www.keruikang.com/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/mobile",

@@ -19,6 +19,7 @@
   };
   let selectedInMedicine = null;
   let selectedOutMedicine = null;
+  let startupPanelApplied = false;
 
   function user() {
     return typeof currentUser === "function" ? currentUser() : { role: "guest", permissions: [] };
@@ -41,15 +42,32 @@
   function mobileWanted() {
     const params = new URLSearchParams(location.search);
     const stored = sessionStorage.getItem("keruikang-view-mode");
-    if (params.get("mobile") === "1" || location.pathname.replace(/\/$/, "").endsWith("/mobile")) return true;
     if (isNurseLike()) return true;
-    if (stored === "mobile") return true;
     if (stored === "desktop") return false;
+    if (stored === "mobile") return true;
+    if (params.get("mobile") === "1" || location.pathname.replace(/\/$/, "").endsWith("/mobile")) return true;
     return isAdminLike() && window.matchMedia("(max-width: 767px)").matches;
   }
 
   function loggedIn() {
     return !!user().id && user().role !== "guest";
+  }
+
+  function startupPanel() {
+    const action = new URLSearchParams(location.search).get("action");
+    return ({ in: "in", out: "out", new: "new" })[action] || "home";
+  }
+
+  function applyStartupPanel() {
+    if (startupPanelApplied) return;
+    startupPanelApplied = true;
+    go(startupPanel());
+  }
+
+  function assertOnlineForWrite() {
+    if (navigator.onLine === false) {
+      throw new Error("当前离线，不能提交库存操作，请联网后再试。");
+    }
   }
 
   function showMobileShell() {
@@ -254,6 +272,7 @@
     const form = event.currentTarget;
     const values = Object.fromEntries(new FormData(form));
     try {
+      assertOnlineForWrite();
       if (!hasPermission("stock.in")) throw new Error("当前账号没有入库权限。");
       if (!selectedInMedicine || !values.medicineId) throw new Error("请先选择药品。");
       if (!String(values.batchNumber || "").trim()) throw new Error("请填写批号。");
@@ -294,6 +313,7 @@
     const selectedValue = document.getElementById("mobileOutBatchSelect").value;
     const batch = (selectedOutMedicine?.batches || []).find(item => (item.id || item.batchNo) === selectedValue);
     try {
+      assertOnlineForWrite();
       if (!hasPermission("stock.out")) throw new Error("当前账号没有出库权限。");
       if (!selectedOutMedicine || !values.medicineId) throw new Error("请先选择药品。");
       if (!batch) throw new Error("请选择可用批次。");
@@ -351,6 +371,7 @@
     const form = event.currentTarget;
     const values = Object.fromEntries(new FormData(form));
     try {
+      assertOnlineForWrite();
       if (!hasPermission("medicine.create") && !hasPermission("medicines.create")) {
         throw new Error("当前账号没有录入药品权限。");
       }
@@ -431,6 +452,7 @@
     document.getElementById("mobileAdminChoice").hidden = !isAdminLike();
     renderToday();
     renderMine();
+    applyStartupPanel();
   }
 
   document.addEventListener("click", event => {

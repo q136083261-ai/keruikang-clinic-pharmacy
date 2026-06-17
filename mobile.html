@@ -4,8 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>可瑞康诊所 · 护士手机端</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0ea5e9">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="可瑞康护士端">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <script>
-    location.replace("/index.html?mobile=1");
+    const target = new URL("/index.html", location.origin);
+    target.searchParams.set("mobile", "1");
+    new URLSearchParams(location.search).forEach((value, key) => {
+      if (key !== "mobile") target.searchParams.set(key, value);
+    });
+    location.replace(target.toString());
   </script>
 </head>
 <body>
