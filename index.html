@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="clinic-polish.css">
   <link rel="stylesheet" href="inventory-transaction.css">
   <link rel="stylesheet" href="manual-stock-in.css">
+  <link rel="stylesheet" href="auth-password.css">
 </head>
 <body>
   <aside class="sidebar">
@@ -46,12 +47,18 @@
       </div>
       <div class="header-actions">
         <div class="theme-picker"><button class="btn theme-toggle" id="themeToggle" type="button">◉ 更换颜色</button><div class="theme-menu" id="themeMenu"></div></div>
-        <label class="user-switch"><span>当前用户</span><select id="currentUser"></select></label>
-        <button class="btn icon-btn" id="switchAccountBtn" type="button" title="切换账号">切换账号</button>
+        <label class="user-switch auth-user-select" hidden><span>当前用户</span><select id="currentUser"></select></label>
+        <div class="account-dropdown" id="accountDropdown">
+          <button class="btn secondary account-trigger" id="accountMenuButton" type="button">当前用户：<strong id="accountUserName">未登录</strong> ▾</button>
+          <div class="account-menu" id="accountMenu" hidden>
+            <button type="button" class="account-menu-item" id="changePasswordBtn">修改密码</button>
+            <button type="button" class="account-menu-item" id="switchAccountBtn">切换账号</button>
+            <button type="button" class="account-menu-item danger" id="logoutBtn">退出登录</button>
+          </div>
+        </div>
         <label class="search-box"><span>⌕</span><input id="globalSearch" placeholder="搜索药品名称 / 编码 / 批号"></label>
         <button class="btn secondary" data-open="stockModal" data-permission-any="stock.in,stock.out">出入库</button>
         <button class="btn primary" data-open="medicineModal" data-permission="medicine.create">＋ 录入药品</button>
-        <button class="btn icon-btn" id="logoutBtn" title="退出登录">退出</button>
       </div>
     </header>
 
@@ -277,7 +284,52 @@
     <p class="scanner-status" id="scannerStatus">正在启动摄像头...</p>
   </section>
   <section class="login-screen" id="loginScreen">
-    <form class="login-card" id="loginForm"><div class="brand-mark">医</div><h2>可瑞康诊所</h2><p>药房管理系统</p><select name="userId" id="loginUser" hidden></select><label><span>登录邮箱</span><input name="email" type="email" placeholder="请输入诊所账号邮箱" autocomplete="username" required></label><label><span>密码</span><input name="password" type="password" placeholder="请输入密码" autocomplete="current-password" required></label><button class="btn primary">登录系统</button><small>账号由诊所管理员创建。库存数据将安全同步至云端。</small></form>
+    <form class="login-card" id="loginForm"><div class="brand-mark">医</div><h2>可瑞康诊所</h2><p>药房管理系统</p><select name="userId" id="loginUser" hidden></select><label><span>登录邮箱</span><input name="email" type="email" placeholder="请输入诊所账号邮箱" autocomplete="username" required></label><label><span>密码</span><input name="password" type="password" placeholder="请输入密码" autocomplete="current-password" required></label><button class="btn primary">登录系统</button><button class="forgot-password-link" id="forgotPasswordBtn" type="button">忘记密码？</button><small>账号由诊所管理员创建。库存数据将安全同步至云端。</small></form>
+  </section>
+  <section class="modal" id="changePasswordModal">
+    <div class="modal-head"><div><h2>修改密码</h2><p>修改成功后需要重新登录。</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="changePasswordForm">
+      <div class="form-grid">
+        <label class="wide"><span>当前密码 *</span><input name="oldPassword" type="password" autocomplete="current-password" required></label>
+        <label><span>新密码 *</span><input name="newPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label><span>确认新密码 *</span><input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+      </div>
+      <p class="password-hint">新密码至少 8 位，建议同时包含字母和数字。</p>
+      <div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary" id="changePasswordSubmit">确认修改</button></div>
+    </form>
+  </section>
+  <section class="modal" id="adminResetPasswordModal">
+    <div class="modal-head"><div><h2>重置员工密码</h2><p>仅管理员可操作，密码只会写入 Supabase Auth。</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="adminResetPasswordForm">
+      <input type="hidden" name="userId">
+      <div class="form-grid">
+        <label><span>用户名称</span><input name="displayName" readonly></label>
+        <label><span>用户 ID</span><input name="targetUserId" readonly></label>
+        <label><span>新密码 *</span><input name="newPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label><span>确认新密码 *</span><input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label class="wide scan-confirm"><input type="checkbox" name="forceReauth" checked><span>重置后要求该用户重新登录</span></label>
+      </div>
+      <div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary" id="adminResetPasswordSubmit">确认重置</button></div>
+    </form>
+  </section>
+  <section class="modal" id="forgotPasswordModal">
+    <div class="modal-head"><div><h2>忘记密码</h2><p>系统会发送密码重置邮件。</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="forgotPasswordForm">
+      <div class="form-grid">
+        <label class="wide"><span>登录邮箱 *</span><input name="email" type="email" autocomplete="email" required></label>
+      </div>
+      <div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary" id="forgotPasswordSubmit">发送重置邮件</button></div>
+    </form>
+  </section>
+  <section class="modal" id="setNewPasswordModal">
+    <div class="modal-head"><div><h2>设置新密码</h2><p>请输入邮件重置链接对应的新密码。</p></div><button class="close-btn" data-close>×</button></div>
+    <form id="setNewPasswordForm">
+      <div class="form-grid">
+        <label><span>新密码 *</span><input name="newPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label><span>确认新密码 *</span><input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+      </div>
+      <div class="form-actions"><button type="button" class="btn ghost" data-close>取消</button><button class="btn primary" id="setNewPasswordSubmit">保存新密码</button></div>
+    </form>
   </section>
   <div class="toast" id="toast"></div>
   <script src="app.js"></script>
@@ -296,6 +348,7 @@
   <script>window.supabase||document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\\/script>')</script>
   <script src="supabase-config.js"></script>
   <script src="cloud-sync.js"></script>
+  <script src="auth-password.js"></script>
   <script src="cloud-inventory.js"></script>
   <script src="batch-drafts-ui.js"></script>
   <script src="stock-wizard.js"></script>

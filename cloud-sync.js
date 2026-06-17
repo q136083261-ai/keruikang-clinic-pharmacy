@@ -39,9 +39,11 @@
     return {
       id: profile?.id,
       name: profile?.display_name || email || "诊所用户",
+      email: email || profile?.email || "",
       role,
       active: profile?.active !== false,
       permissions: role === "admin" ? permissionDefs.map(x => x[0]) :
+        Array.isArray(profile?.permissions) && profile.permissions.length ? profile.permissions :
         role === "operator" ? [...defaultPermissions] :
         ["alerts.view", "transactions.view"]
     };
@@ -112,7 +114,16 @@
     const { data: catalog } = await client.from("public_catalog").select("medicine_id,visible");
     const catalogMap = new Map((catalog || []).map(x => [x.medicine_id, x.visible]));
     data.medicines.forEach(m => m.publicVisible = catalogMap.get(m.id) === true);
-    data.users = [user];
+    if (user.role === "admin") {
+      const { data: profiles, error: profilesError } = await client
+        .from("profiles")
+        .select("id,display_name,role,active,permissions")
+        .order("display_name");
+      if (profilesError) throw profilesError;
+      data.users = (profiles || []).map(profile => cloudUser(profile, profile.id === user.id ? authData.user.email : ""));
+    } else {
+      data.users = [user];
+    }
     data.currentUserId = user.id;
     localStorage.setItem(storeKey, JSON.stringify(data));
     render();

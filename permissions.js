@@ -33,7 +33,8 @@ function renderPermissionOptions(selected=[]){
 }
 function renderUsers(){
   const table=document.getElementById("userTable");if(!table)return;
-  table.innerHTML=data.users.map(u=>`<tr><td><div class="drug-name"><strong>${u.name}</strong><span>${u.id}</span></div></td><td>${badge([u.role==="admin"?"管理员":"普通用户",u.role==="admin"?"risk-green":"risk-orange"])}</td><td><span class="status-dot" style="background:${u.active?"#16806e":"#aaa"}"></span>${u.active?"已启用":"已停用"}</td><td><div class="permission-tags">${(u.role==="admin"?["全部权限"]:u.permissions.map(permissionLabel)).map(x=>`<span class="permission-tag">${x}</span>`).join("")}</div></td><td>${u.role==="admin"?"系统管理员":`<button class="link-btn" data-edit-user="${u.id}">编辑权限</button> · <button class="link-btn" data-toggle-user="${u.id}">${u.active?"停用":"启用"}</button>`}</td></tr>`).join("");
+  const me=currentUser();
+  table.innerHTML=data.users.map(u=>{const reset=me.role==="admin"&&u.id!==me.id?` · <button class="link-btn" data-reset-password="${u.id}">重置密码</button>`:"";const actions=u.role==="admin"?"系统管理员":`<button class="link-btn" data-edit-user="${u.id}">编辑权限</button>${reset} · <button class="link-btn" data-toggle-user="${u.id}">${u.active?"停用":"启用"}</button>`;return `<tr><td><div class="drug-name"><strong>${u.name}</strong><span>${u.id}</span></div></td><td>${badge([u.role==="admin"?"管理员":"普通用户",u.role==="admin"?"risk-green":"risk-orange"])}</td><td><span class="status-dot" style="background:${u.active?"#16806e":"#aaa"}"></span>${u.active?"已启用":"已停用"}</td><td><div class="permission-tags">${(u.role==="admin"?["全部权限"]:u.permissions.map(permissionLabel)).map(x=>`<span class="permission-tag">${x}</span>`).join("")}</div></td><td>${actions}</td></tr>`}).join("");
 }
 function updateStockTypeAccess(){
   document.querySelectorAll('input[name="type"]').forEach(x=>{x.disabled=!can("stock."+x.value)});
@@ -44,6 +45,7 @@ function renderPermissionUI(){
   ensureUsers();
   const select=document.getElementById("currentUser");
   select.innerHTML=data.currentUserId?data.users.filter(u=>u.active).map(u=>`<option value="${u.id}" ${u.id===data.currentUserId?"selected":""}>${u.name}${u.role==="admin"?"（管理员）":""}</option>`).join(""):`<option value="">未登录</option>`;
+  const accountName=document.getElementById("accountUserName");if(accountName)accountName.textContent=currentUser().name;
   document.querySelector(".clinic-card strong").textContent=currentUser().name;
   document.querySelectorAll("[data-permission]").forEach(x=>x.classList.toggle("hidden-by-permission",!can(x.dataset.permission)));
   document.querySelectorAll("[data-permission-any]").forEach(x=>x.classList.toggle("hidden-by-permission",!canAny(x.dataset.permissionAny)));
