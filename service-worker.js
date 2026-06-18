@@ -1,4 +1,4 @@
-const CACHE_NAME = "keruikang-nurse-pwa-v1.1.0";
+const CACHE_NAME = "keruikang-nurse-pwa-v1.1.1";
 
 const STATIC_ASSETS = [
   "/mobile",
