@@ -124,14 +124,17 @@ async function writeAudit(adminClient, { operatorUserId, targetUserId, req, role
   const { error } = await adminClient
     .from("audit_logs")
     .insert({
+      user_id: operatorUserId,
       action: "admin_create_user",
-      detail: JSON.stringify({
+      entity_type: "user",
+      entity_id: targetUserId,
+      details: {
         target_user_id: targetUserId,
         operator_user_id: operatorUserId,
         role,
         ip: String(ip).split(",")[0].trim(),
         user_agent: String(userAgent).slice(0, 300)
-      })
+      }
     });
   if (error) throw error;
   return true;
