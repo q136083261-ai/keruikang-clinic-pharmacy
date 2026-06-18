@@ -1,21 +1,21 @@
-const CACHE_NAME = "keruikang-nurse-pwa-v1.0.0";
+const CACHE_NAME = "keruikang-nurse-pwa-v1.1.0";
 
 const STATIC_ASSETS = [
-  "/",
-  "/index.html",
   "/mobile",
   "/mobile.html",
+  "/install",
+  "/install/index.html",
+  "/install.html",
+  "/app",
+  "/app/index.html",
+  "/nurse-app",
+  "/nurse-app/index.html",
   "/manifest.webmanifest",
+  "/service-worker.js",
   "/install-app.css",
   "/install-app.js",
   "/mobile-nurse.css",
   "/mobile-nurse.js",
-  "/styles.css",
-  "/auth-password.css",
-  "/supabase-config.js",
-  "/cloud-sync.js",
-  "/auth-session.js",
-  "/cloud-inventory.js",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/apple-touch-icon.png",
@@ -36,13 +36,8 @@ function isSensitiveRequest(url) {
   );
 }
 
-function isHtmlRequest(request, url) {
-  return (
-    request.mode === "navigate" ||
-    request.headers.get("accept")?.includes("text/html") ||
-    url.pathname === "/mobile" ||
-    url.pathname.endsWith(".html")
-  );
+function isHtmlShell(pathname) {
+  return ["/mobile", "/mobile.html", "/install", "/install.html", "/app", "/nurse-app"].includes(pathname);
 }
 
 function isCacheableStatic(url) {
@@ -50,7 +45,9 @@ function isCacheableStatic(url) {
   return (
     STATIC_ASSETS.includes(url.pathname) ||
     url.pathname.startsWith("/icons/") ||
-    /\.(css|js|png|svg|webmanifest)$/i.test(url.pathname)
+    /^\/(install-app|mobile-nurse)\.(css|js)$/i.test(url.pathname) ||
+    url.pathname === "/manifest.webmanifest" ||
+    url.pathname === "/service-worker.js"
   );
 }
 
@@ -80,7 +77,7 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  if (isHtmlRequest(request, url)) {
+  if (isHtmlShell(url.pathname)) {
     event.respondWith(
       fetch(request)
         .then(response => {
@@ -92,7 +89,9 @@ self.addEventListener("fetch", event => {
         })
         .catch(async () => {
           const cached = await caches.match(request);
-          return cached || caches.match("/mobile.html") || caches.match("/index.html");
+          if (cached) return cached;
+          if (["/install", "/app", "/nurse-app"].includes(url.pathname)) return caches.match("/install.html");
+          return caches.match("/mobile.html");
         })
     );
     return;

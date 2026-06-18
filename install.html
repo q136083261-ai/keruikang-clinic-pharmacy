@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>可瑞康护士端安装</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0ea5e9">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="可瑞康护士端">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/install-app.css">
+</head>
+<body class="pwa-install-page" data-install-page>
+  <main class="install-shell">
+    <section class="install-hero">
+      <img class="install-logo" src="/icons/icon-192.png" alt="可瑞康护士端图标">
+      <p class="install-kicker">可瑞康诊所</p>
+      <h1>安装可瑞康护士端</h1>
+      <p class="install-subtitle">把护士端安装到手机桌面。以后护士只需要点桌面图标，就能登录并操作入库、出库和药品录入。</p>
+      <div class="install-feature-row" aria-label="护士端功能">
+        <span>药品入库</span>
+        <span>药品出库</span>
+        <span>录入药品</span>
+      </div>
+      <div class="install-actions">
+        <a class="install-primary" href="https://www.keruikang.com/mobile">打开护士端</a>
+        <button class="install-secondary" type="button" data-pwa-install>安装到手机桌面</button>
+        <button class="install-ghost" type="button" data-copy-url="https://www.keruikang.com/mobile">复制护士端链接</button>
+      </div>
+      <div class="install-url-card">
+        <span>安装页地址</span>
+        <strong>https://www.keruikang.com/install</strong>
+        <button type="button" data-copy-url="https://www.keruikang.com/install">复制安装页</button>
+      </div>
+    </section>
+
+    <section class="install-guide-card" id="installDeviceGuide" aria-live="polite">
+      <h2>正在识别手机环境...</h2>
+      <p>如果页面没有自动识别，请直接点击“打开护士端”。</p>
+    </section>
+
+    <section class="install-note-card">
+      <h2>给护士的话</h2>
+      <ol>
+        <li>先把这个页面用手机浏览器打开。</li>
+        <li>按照页面提示“添加到主屏幕”或“安装应用”。</li>
+        <li>回到手机桌面，点击“可瑞康护士端”图标。</li>
+        <li>输入管理员分配的账号和密码登录。</li>
+      </ol>
+    </section>
+  </main>
+  <script src="/install-app.js"></script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 {
   "name": "可瑞康诊所护士端",
-  "short_name": "可瑞康",
-  "description": "可瑞康诊所药品入库、出库和药品录入",
+  "short_name": "可瑞康护士端",
+  "description": "可瑞康诊所药品入库、出库和药品录入手机工作台",
   "start_url": "/mobile?source=pwa",
   "scope": "/",
   "display": "standalone",
@@ -12,12 +12,14 @@
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [

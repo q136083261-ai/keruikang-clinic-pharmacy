@@ -1,3 +1,12 @@
+:root {
+  --pwa-blue: #0ea5e9;
+  --pwa-blue-dark: #0369a1;
+  --pwa-ink: #123044;
+  --pwa-muted: #60758a;
+  --pwa-line: #cdeafd;
+  --pwa-soft: #eef8ff;
+}
+
 .pwa-mobile-entry .login-screen {
   place-items: stretch;
   overflow: auto;
@@ -11,7 +20,7 @@
   align-self: center;
   justify-self: center;
   width: min(430px, 100%);
-  border: 1px solid #cdeafd;
+  border: 1px solid var(--pwa-line);
   border-radius: 28px;
   box-shadow: 0 24px 60px rgba(14, 116, 144, 0.18);
 }
@@ -20,7 +29,7 @@
   width: 48px;
   height: 48px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+  background: linear-gradient(135deg, var(--pwa-blue), #06b6d4);
   color: #fff;
 }
 
@@ -50,7 +59,7 @@
 .remember-account input {
   width: 18px !important;
   min-height: 18px !important;
-  accent-color: #0ea5e9;
+  accent-color: var(--pwa-blue);
 }
 
 .login-link-row {
@@ -78,7 +87,7 @@
 .pwa-install-box {
   margin-top: 14px;
   padding: 14px;
-  border: 1px solid #cbe8f8;
+  border: 1px solid var(--pwa-line);
   border-radius: 20px;
   background: #f1fbff;
 }
@@ -92,10 +101,10 @@
   color: #16415f;
 }
 
-.pwa-install-box span,
-.pwa-install-guide li,
-.pwa-install-modal p {
-  color: #5f7488;
+.pwa-install-status {
+  margin: 7px 0 0;
+  color: var(--pwa-muted);
+  font-size: 13px;
 }
 
 .pwa-install-button,
@@ -105,7 +114,7 @@
   margin-top: 12px;
   border: 0;
   border-radius: 16px;
-  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  background: linear-gradient(135deg, var(--pwa-blue), #0284c7);
   color: #fff;
   font-weight: 800;
 }
@@ -116,13 +125,21 @@
   padding: 0 15px;
 }
 
+.pwa-install-help {
+  display: inline-block;
+  margin-top: 10px;
+  color: #0b7fbd;
+  font-weight: 700;
+}
+
 .pwa-install-guide {
   margin: 12px 0 0;
   padding-left: 18px;
 }
 
 .pwa-install-guide li {
-  margin: 5px 0;
+  margin: 7px 0;
+  color: var(--pwa-muted);
 }
 
 .pwa-install-modal .qr-wrap {
@@ -147,4 +164,209 @@
   background: #edf7fd;
   color: #0a699f;
   font-weight: 700;
+}
+
+.pwa-install-modal .module-grid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.pwa-toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 9999;
+  transform: translateX(-50%);
+  max-width: min(92vw, 420px);
+  padding: 12px 15px;
+  border-radius: 999px;
+  background: #0f2d42;
+  color: #fff;
+  box-shadow: 0 14px 32px rgba(11, 34, 52, 0.22);
+}
+
+.pwa-install-page {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--pwa-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(14, 165, 233, 0.26), transparent 34%),
+    radial-gradient(circle at 86% 18%, rgba(6, 182, 212, 0.2), transparent 30%),
+    linear-gradient(180deg, #edf9ff 0%, #ffffff 58%, #f6fbff 100%);
+}
+
+.install-shell {
+  width: min(920px, calc(100% - 28px));
+  margin: 0 auto;
+  padding: max(20px, env(safe-area-inset-top)) 0 max(30px, env(safe-area-inset-bottom));
+}
+
+.install-hero,
+.install-guide-card,
+.install-note-card {
+  border: 1px solid var(--pwa-line);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 20px 60px rgba(14, 116, 144, 0.16);
+}
+
+.install-hero {
+  display: grid;
+  justify-items: center;
+  padding: 28px 20px;
+  text-align: center;
+}
+
+.install-logo {
+  width: 82px;
+  height: 82px;
+  border-radius: 24px;
+  box-shadow: 0 14px 28px rgba(14, 116, 144, 0.18);
+}
+
+.install-kicker {
+  margin: 15px 0 0;
+  color: var(--pwa-blue-dark);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.install-hero h1 {
+  margin: 8px 0 10px;
+  font-size: clamp(30px, 7vw, 48px);
+}
+
+.install-subtitle {
+  max-width: 660px;
+  margin: 0;
+  color: var(--pwa-muted);
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.install-feature-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0 0;
+}
+
+.install-feature-row span {
+  padding: 9px 13px;
+  border: 1px solid #bce6fb;
+  border-radius: 999px;
+  background: #effaff;
+  color: #096d9f;
+  font-weight: 800;
+}
+
+.install-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  width: min(720px, 100%);
+  margin-top: 24px;
+}
+
+.install-primary,
+.install-secondary,
+.install-ghost,
+.install-url-card button,
+.install-guide-card a,
+.install-guide-card button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 0;
+  text-decoration: none;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.install-primary,
+.install-secondary,
+.install-guide-card a {
+  background: linear-gradient(135deg, var(--pwa-blue), #0284c7);
+  color: #fff;
+}
+
+.install-ghost,
+.install-url-card button,
+.install-guide-card button {
+  background: #e9f7ff;
+  color: #0a699f;
+}
+
+.install-url-card {
+  display: grid;
+  gap: 7px;
+  width: min(650px, 100%);
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px dashed #a7dff8;
+  border-radius: 18px;
+  background: #f5fcff;
+  text-align: left;
+}
+
+.install-url-card span {
+  color: var(--pwa-muted);
+  font-size: 13px;
+}
+
+.install-url-card strong {
+  word-break: break-all;
+  color: var(--pwa-blue-dark);
+}
+
+.install-guide-card,
+.install-note-card {
+  margin-top: 16px;
+  padding: 22px;
+}
+
+.install-guide-card h2,
+.install-note-card h2 {
+  margin: 0 0 10px;
+}
+
+.install-guide-card p,
+.install-note-card li {
+  color: var(--pwa-muted);
+  line-height: 1.7;
+}
+
+.install-guide-card ol,
+.install-note-card ol {
+  margin: 10px 0 0;
+  padding-left: 22px;
+}
+
+.install-guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+@media (max-width: 680px) {
+  .install-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .install-hero {
+    padding: 24px 16px;
+  }
+}
+
+@media print {
+  .pwa-install-button,
+  .pwa-admin-install-button,
+  .form-actions button {
+    display: none !important;
+  }
 }
