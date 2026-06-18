@@ -53,8 +53,23 @@
   async function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) return;
     if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") return;
+
+    const hadController = Boolean(navigator.serviceWorker.controller);
+    let reloadingForUpdate = false;
+
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!hadController || reloadingForUpdate) return;
+      reloadingForUpdate = true;
+      window.location.reload();
+    });
+
     try {
-      await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
+      const registration = await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
+      if (hadController) {
+        registration.update().catch(error => {
+          console.warn("PWA service worker update check failed", error);
+        });
+      }
     } catch (error) {
       console.warn("PWA service worker registration failed", error);
     }

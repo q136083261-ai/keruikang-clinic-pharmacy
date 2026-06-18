@@ -1,4 +1,4 @@
-const CACHE_NAME = "keruikang-nurse-pwa-v1.1.1";
+const CACHE_NAME = "keruikang-nurse-pwa-v1.1.2";
 
 const STATIC_ASSETS = [
   "/mobile",
@@ -13,8 +13,8 @@ const STATIC_ASSETS = [
   "/manifest.webmanifest",
   "/service-worker.js",
   "/install-app.css",
-  "/install-app.js",
-  "/mobile-nurse.css",
+  "/install-app.js?v=1.1.2",
+  "/mobile-nurse.css?v=1.1.2",
   "/mobile-nurse.js",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
