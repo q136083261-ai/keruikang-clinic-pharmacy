@@ -1,14 +1,38 @@
-.mobile-nurse-app {
-  min-height: 100vh;
-  background: linear-gradient(180deg, #eaf7ff 0%, #f7fbff 42%, #ffffff 100%);
-  color: #17324d;
-  padding: 16px 14px 92px;
+:root {
+  --mobile-max-width: 480px;
+  --mobile-page-x: 16px;
+  --mobile-font: 16px;
+  --mobile-small: 13px;
+  --mobile-title: 22px;
+  --mobile-input-h: 48px;
+  --mobile-button-h: 52px;
+  --mobile-radius: 12px;
+  --mobile-card-radius: 16px;
+  --mobile-gap-1: 8px;
+  --mobile-gap-2: 12px;
+  --mobile-gap-3: 16px;
+  --mobile-gap-4: 24px;
+  --mobile-blue: #1598d3;
+  --mobile-blue-dark: #0b6f9e;
+  --mobile-blue-soft: #e7f6fd;
+  --mobile-text: #17324d;
+  --mobile-muted: #6c8194;
+  --mobile-line: #cfe6f2;
+  --mobile-surface: #ffffff;
+  --mobile-success: #15845f;
+  --mobile-error: #d84b4b;
+  --mobile-warning: #b7791f;
+  --mobile-shadow: 0 10px 28px rgba(32, 112, 156, 0.09);
+  --mobile-nav-h: 68px;
 }
 
 body.mobile-nurse-mode {
   display: block;
-  background: #f7fbff;
+  min-width: 0;
   overflow-x: hidden;
+  background: #eef8fd;
+  color: var(--mobile-text);
+  font-size: var(--mobile-font);
 }
 
 body.mobile-nurse-mode > .sidebar,
@@ -17,38 +41,71 @@ body.mobile-nurse-mode #cloudSyncStatus {
   display: none !important;
 }
 
+body.mobile-nurse-mode #cloudSyncStatus {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  #cloudSyncStatus {
+    display: none !important;
+  }
+}
+
 body.mobile-nurse-mode .mobile-nurse-app {
   display: block;
 }
 
+.mobile-nurse-app {
+  width: 100%;
+  max-width: var(--mobile-max-width);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: var(--mobile-gap-3) var(--mobile-page-x) calc(var(--mobile-nav-h) + 112px + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 18% -8%, rgba(61, 181, 224, 0.2), transparent 34%),
+    linear-gradient(180deg, #eff9fe 0%, #f7fcff 48%, #ffffff 100%);
+  color: var(--mobile-text);
+}
+
 .mobile-nurse-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: var(--mobile-gap-2);
+  margin: 0 calc(var(--mobile-page-x) * -1) var(--mobile-gap-3);
+  padding: var(--mobile-gap-3) var(--mobile-page-x) var(--mobile-gap-3);
+  border-bottom: 1px solid rgba(207, 230, 242, 0.72);
+  background: rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(14px);
 }
 
 .mobile-nurse-header h1 {
-  margin: 2px 0 4px;
-  font-size: 24px;
-  letter-spacing: -0.02em;
+  margin: 4px 0;
+  color: var(--mobile-text);
+  font-size: 26px;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
 }
 
 .mobile-nurse-header p,
+.mobile-form-intro,
 .mobile-action-card span,
 .mobile-selected-card span,
 .mobile-record-list span {
-  color: #5f7488;
+  color: var(--mobile-muted);
+  font-size: var(--mobile-small);
+  line-height: 1.45;
 }
 
 .mobile-kicker {
   display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 var(--mobile-gap-2);
   border-radius: 999px;
-  background: #d8f1ff;
-  color: #087bb6;
-  padding: 5px 10px;
-  font-size: 12px;
+  background: #d7f0fb;
+  color: var(--mobile-blue-dark);
+  font-size: var(--mobile-small);
   font-weight: 700;
 }
 
@@ -56,36 +113,51 @@ body.mobile-nurse-mode .mobile-nurse-app {
 .mobile-secondary-btn,
 .mobile-danger-btn,
 .mobile-primary-btn {
+  min-height: var(--mobile-input-h);
   border: 0;
-  border-radius: 16px;
-  font-weight: 800;
-  min-height: 48px;
-  padding: 0 18px;
+  border-radius: var(--mobile-radius);
+  font: inherit;
+  font-weight: 700;
 }
 
 .mobile-icon-btn,
 .mobile-secondary-btn {
-  background: #e5f3fb;
-  color: #1177ad;
+  background: var(--mobile-blue-soft);
+  color: var(--mobile-blue-dark);
+}
+
+.mobile-icon-btn {
+  min-width: 72px;
+  padding: 0 var(--mobile-gap-3);
+}
+
+.mobile-danger-btn,
+.mobile-secondary-btn {
+  width: 100%;
+  margin-top: var(--mobile-gap-2);
 }
 
 .mobile-danger-btn {
-  width: 100%;
-  margin-top: 10px;
-  background: #ffe8e8;
-  color: #c33f3b;
+  background: #fff0f0;
+  color: var(--mobile-error);
 }
 
 .mobile-primary-btn {
   width: 100%;
-  min-height: 54px;
-  background: linear-gradient(135deg, #24a9e6, #1389d4);
-  color: white;
-  box-shadow: 0 10px 24px rgba(19, 137, 212, 0.22);
+  min-height: var(--mobile-button-h);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #29aee6, #1189cf);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(17, 137, 207, 0.22);
 }
 
-.mobile-nurse-main {
-  display: block;
+.mobile-primary-btn:focus-visible,
+.mobile-bottom-nav button:focus-visible,
+.mobile-form input:focus-visible,
+.mobile-form select:focus-visible,
+.mobile-form textarea:focus-visible {
+  outline: 3px solid rgba(21, 152, 211, 0.24);
+  outline-offset: 2px;
 }
 
 .mobile-panel {
@@ -97,13 +169,14 @@ body.mobile-nurse-mode .mobile-nurse-app {
 }
 
 .mobile-card-grid,
-.mobile-admin-choice {
+.mobile-admin-choice,
+.mobile-record-list {
   display: grid;
-  gap: 12px;
+  gap: var(--mobile-gap-2);
 }
 
 .mobile-admin-choice {
-  margin-bottom: 12px;
+  margin-bottom: var(--mobile-gap-2);
 }
 
 .mobile-action-card,
@@ -111,86 +184,143 @@ body.mobile-nurse-mode .mobile-nurse-app {
 .mobile-selected-card,
 .mobile-reference-note,
 .mobile-record-card,
-.mobile-readonly-grid > div {
+.mobile-readonly-grid > div,
+.mobile-form-section {
   width: 100%;
-  border: 1px solid #cce8f7;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 12px 30px rgba(20, 107, 157, 0.08);
+  border: 1px solid var(--mobile-line);
+  border-radius: var(--mobile-card-radius);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--mobile-shadow);
 }
 
 .mobile-action-card {
+  min-height: 86px;
+  padding: var(--mobile-gap-3);
   text-align: left;
-  padding: 18px;
 }
 
 .mobile-action-card strong {
   display: block;
-  font-size: 19px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
+  color: #102c44;
+  font-size: 18px;
+  line-height: 1.25;
 }
 
 .mobile-form {
   display: grid;
-  gap: 13px;
+  gap: var(--mobile-gap-2);
 }
 
 .mobile-form h2,
 #mobileTodayPanel h2,
 #mobileMinePanel h2 {
-  margin: 0 0 4px;
-  font-size: 22px;
+  margin: var(--mobile-gap-2) 0 0;
+  color: var(--mobile-text);
+  font-size: var(--mobile-title);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.mobile-form-intro {
+  margin: -4px 0 var(--mobile-gap-1);
+}
+
+.mobile-form-section {
+  display: grid;
+  gap: var(--mobile-gap-2);
+  padding: var(--mobile-gap-3);
+}
+
+.mobile-section-title {
+  color: var(--mobile-blue-dark);
+  font-size: var(--mobile-small);
+  font-weight: 800;
+}
+
+.mobile-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--mobile-gap-2);
+}
+
+.mobile-field-row.compact {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
 }
 
 .mobile-form label {
   display: grid;
-  gap: 7px;
-  color: #27455f;
-  font-weight: 750;
+  gap: 6px;
+  min-width: 0;
+  color: #254761;
+  font-size: var(--mobile-small);
+  font-weight: 700;
 }
 
 .mobile-form input,
 .mobile-form select,
 .mobile-form textarea {
   width: 100%;
-  border: 1px solid #c9dfec;
-  border-radius: 16px;
-  background: white;
-  color: #18354e;
+  min-width: 0;
+  min-height: var(--mobile-input-h);
+  padding: 11px 13px;
+  border: 1px solid var(--mobile-line);
+  border-radius: var(--mobile-radius);
+  background: #fff;
+  color: var(--mobile-text);
   font: inherit;
-  min-height: 50px;
-  padding: 12px 14px;
+  line-height: 1.35;
   outline: none;
 }
 
+.mobile-form input::placeholder,
+.mobile-form textarea::placeholder {
+  color: #93a5b5;
+}
+
+.mobile-form input[type="date"] {
+  padding-right: 9px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 .mobile-form textarea {
+  min-height: 72px;
+  max-height: 128px;
   resize: vertical;
 }
 
 .mobile-check {
+  display: grid;
   grid-template-columns: auto 1fr;
   align-items: flex-start;
-  border: 1px dashed #b9d8ea;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
-  padding: 13px;
+  gap: var(--mobile-gap-2);
+  padding: var(--mobile-gap-3);
+  border: 1px dashed #afd8ed;
+  border-radius: var(--mobile-card-radius);
+  background: rgba(255, 255, 255, 0.84);
+  color: #24475f;
+  line-height: 1.45;
 }
 
 .mobile-check input {
-  width: 20px;
-  min-height: 20px;
-  margin-top: 2px;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  margin-top: 1px;
+  accent-color: var(--mobile-blue);
 }
 
 .mobile-search-results {
   display: grid;
-  gap: 10px;
+  gap: var(--mobile-gap-1);
 }
 
 .mobile-search-card {
   display: grid;
-  gap: 4px;
-  padding: 14px;
+  gap: 3px;
+  min-height: 58px;
+  padding: var(--mobile-gap-2);
   text-align: left;
 }
 
@@ -198,91 +328,153 @@ body.mobile-nurse-mode .mobile-nurse-app {
 .mobile-selected-card strong,
 .mobile-record-card strong {
   display: block;
-  font-size: 16px;
+  color: var(--mobile-text);
+  font-size: 15px;
+  line-height: 1.35;
 }
 
 .mobile-selected-card,
-.mobile-record-card {
-  padding: 14px;
+.mobile-record-card,
+.mobile-reference-note {
+  padding: var(--mobile-gap-2);
 }
 
 .mobile-reference-note {
-  padding: 12px 14px;
-  background: #fff8df;
-  border-color: #f3d179;
-  color: #8a6417;
+  background: #fff8e5;
+  border-color: #f2d38a;
+  color: var(--mobile-warning);
+  font-size: var(--mobile-small);
   font-weight: 700;
+  line-height: 1.45;
 }
 
 .mobile-readonly-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: var(--mobile-gap-2);
 }
 
 .mobile-readonly-grid > div {
-  padding: 13px;
+  padding: var(--mobile-gap-2);
 }
 
 .mobile-readonly-grid span {
   display: block;
-  color: #698096;
+  margin-bottom: 4px;
+  color: var(--mobile-muted);
   font-size: 12px;
-  margin-bottom: 5px;
 }
 
 .mobile-submit-bar {
-  position: sticky;
-  bottom: 74px;
-  z-index: 4;
-  padding-top: 4px;
-  background: linear-gradient(180deg, rgba(247, 251, 255, 0), #f7fbff 48%);
+  position: relative;
+  z-index: 1;
+  margin: var(--mobile-gap-2) 0 0;
+  padding: 0;
+  scroll-margin-bottom: calc(var(--mobile-nav-h) + var(--mobile-gap-3) + env(safe-area-inset-bottom));
 }
 
 .mobile-bottom-nav {
   position: fixed;
-  left: 0;
-  right: 0;
+  left: 50%;
+  right: auto;
   bottom: 0;
   z-index: 20;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 4px;
-  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+  width: min(100%, var(--mobile-max-width));
+  min-height: var(--mobile-nav-h);
+  padding: 8px var(--mobile-gap-2) calc(8px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  border-top: 1px solid rgba(207, 230, 242, 0.9);
   background: rgba(255, 255, 255, 0.96);
-  border-top: 1px solid #d6e9f4;
-  box-shadow: 0 -12px 24px rgba(30, 86, 120, 0.08);
+  box-shadow: 0 -8px 24px rgba(25, 91, 130, 0.08);
+  backdrop-filter: blur(16px);
 }
 
 .mobile-bottom-nav button {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 2px;
   border: 0;
-  border-radius: 14px;
+  border-radius: var(--mobile-radius);
   background: transparent;
   color: #61798d;
-  font-weight: 800;
-  min-height: 44px;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .mobile-bottom-nav button.active {
-  background: #dcf2ff;
-  color: #087bb6;
+  background: #dff3fd;
+  color: var(--mobile-blue-dark);
 }
 
-.mobile-record-list {
-  display: grid;
-  gap: 10px;
+body.mobile-nurse-mode .toast {
+  left: max(12px, calc((100vw - var(--mobile-max-width)) / 2 + 12px));
+  right: max(12px, calc((100vw - var(--mobile-max-width)) / 2 + 12px));
+  bottom: calc(var(--mobile-nav-h) + 16px + env(safe-area-inset-bottom));
+  z-index: 30;
+  max-height: 35vh;
+  overflow: auto;
+  padding: var(--mobile-gap-2) var(--mobile-gap-3);
+  border-radius: var(--mobile-radius);
+  background: #153e56;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: normal;
+  box-shadow: 0 12px 26px rgba(15, 52, 72, 0.2);
 }
 
-.mobile-secondary-btn {
-  width: 100%;
-  margin-top: 10px;
+body.mobile-nurse-mode .login-screen {
+  align-items: start;
+  place-items: start center;
+  padding: 42px var(--mobile-page-x) var(--mobile-gap-4);
+  background:
+    radial-gradient(circle at 20% 0%, rgba(94, 194, 232, 0.28), transparent 38%),
+    linear-gradient(180deg, #eff9fe, #dff3fb);
 }
 
-@media (min-width: 768px) {
+body.mobile-nurse-mode .login-card {
+  width: min(100%, 360px);
+  padding: 24px 20px;
+  border: 1px solid var(--mobile-line);
+  border-radius: var(--mobile-card-radius);
+  box-shadow: var(--mobile-shadow);
+}
+
+@media (max-width: 700px) {
+  .login-card {
+    width: min(100%, 360px);
+  }
+}
+
+@media (min-width: 481px) {
+  body.mobile-nurse-mode {
+    background: #dceff8;
+  }
+
   body.mobile-nurse-mode .mobile-nurse-app {
-    max-width: 520px;
-    margin: 0 auto;
     border-left: 1px solid #d8edf8;
     border-right: 1px solid #d8edf8;
+  }
+}
+
+@media (max-width: 374px) {
+  :root {
+    --mobile-page-x: 14px;
+  }
+
+  .mobile-nurse-header h1 {
+    font-size: 24px;
+  }
+
+  .mobile-field-row,
+  .mobile-field-row.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .mobile-bottom-nav button {
+    font-size: 13px;
   }
 }

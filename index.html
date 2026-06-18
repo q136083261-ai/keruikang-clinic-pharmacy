@@ -389,18 +389,32 @@
       <section class="mobile-panel" id="mobileStockInPanel" data-mobile-panel="in">
         <form id="mobileStockInForm" class="mobile-form">
           <h2>药品入库</h2>
-          <label><span>搜索/选择药品 *</span><input id="mobileInSearch" type="search" autocomplete="off" placeholder="输入药品名、厂家或编码"></label>
-          <div class="mobile-search-results" id="mobileInResults"></div>
-          <input type="hidden" name="medicineId" id="mobileInMedicineId">
-          <div class="mobile-selected-card" id="mobileInSelected" hidden></div>
-          <div class="mobile-reference-note" id="mobileInDraftNote" hidden>来自 Excel 导入参考资料，请按药盒实物核对后再入库。</div>
-          <label><span>入库数量 *</span><input name="quantity" type="number" min="1" inputmode="numeric" required></label>
-          <label><span>批号 *</span><input name="batchNumber" autocomplete="off" required></label>
-          <label><span>生产日期 *</span><input name="productionDate" type="date" required></label>
-          <label><span>有效期至 *</span><input name="expiryDate" type="date" required></label>
-          <label><span>单位</span><input name="unit" autocomplete="off" placeholder="盒"></label>
-          <label><span>零售价，可选</span><input name="retailPrice" type="number" min="0" step="0.01" inputmode="decimal"></label>
-          <label><span>备注，可选</span><textarea name="note" rows="2" placeholder="例如：护士手机端入库"></textarea></label>
+          <p class="mobile-form-intro">按药盒实物核对批号、生产日期和有效期后再保存。</p>
+          <div class="mobile-form-section">
+            <div class="mobile-section-title">药品</div>
+            <label><span>搜索/选择药品 *</span><input id="mobileInSearch" type="search" autocomplete="off" placeholder="输入药品名、厂家或编码"></label>
+            <div class="mobile-search-results" id="mobileInResults"></div>
+            <input type="hidden" name="medicineId" id="mobileInMedicineId">
+            <div class="mobile-selected-card" id="mobileInSelected" hidden></div>
+            <div class="mobile-reference-note" id="mobileInDraftNote" hidden>来自 Excel 导入参考资料，请按药盒实物核对后再入库。</div>
+          </div>
+          <div class="mobile-form-section">
+            <div class="mobile-section-title">批次信息</div>
+            <div class="mobile-field-row compact">
+              <label><span>入库数量 *</span><input name="quantity" type="number" min="1" inputmode="numeric" required></label>
+              <label><span>单位</span><input name="unit" autocomplete="off" placeholder="盒"></label>
+            </div>
+            <label><span>批号 *</span><input name="batchNumber" autocomplete="off" required></label>
+            <div class="mobile-field-row">
+              <label><span>生产日期 *</span><input name="productionDate" type="date" required></label>
+              <label><span>有效期至 *</span><input name="expiryDate" type="date" required></label>
+            </div>
+          </div>
+          <div class="mobile-form-section">
+            <div class="mobile-section-title">其他信息</div>
+            <label><span>零售价，可选</span><input name="retailPrice" type="number" min="0" step="0.01" inputmode="decimal"></label>
+            <label><span>备注，可选</span><textarea name="note" rows="2" placeholder="例如：护士手机端入库"></textarea></label>
+          </div>
           <label class="mobile-check"><input name="confirmed" type="checkbox" required><span>我已核对本次入库包装、药品、批号、生产日期和有效期</span></label>
           <div class="mobile-submit-bar"><button class="mobile-primary-btn" type="submit">确认入库</button></div>
         </form>
@@ -409,19 +423,28 @@
       <section class="mobile-panel" id="mobileStockOutPanel" data-mobile-panel="out">
         <form id="mobileStockOutForm" class="mobile-form">
           <h2>药品出库</h2>
-          <label><span>搜索/选择药品 *</span><input id="mobileOutSearch" type="search" autocomplete="off" placeholder="输入药品名、厂家或编码"></label>
-          <div class="mobile-search-results" id="mobileOutResults"></div>
-          <input type="hidden" name="medicineId" id="mobileOutMedicineId">
-          <input type="hidden" name="batchId" id="mobileOutBatchId">
-          <div class="mobile-selected-card" id="mobileOutSelected" hidden></div>
-          <label><span>选择批次 *</span><select id="mobileOutBatchSelect" required></select></label>
-          <div class="mobile-readonly-grid">
-            <div><span>当前库存</span><strong id="mobileOutBatchQty">-</strong></div>
-            <div><span>有效期</span><strong id="mobileOutBatchExpiry">-</strong></div>
+          <p class="mobile-form-intro">优先选择临期批次，确认数量后登记出库。</p>
+          <div class="mobile-form-section">
+            <div class="mobile-section-title">药品和批次</div>
+            <label><span>搜索/选择药品 *</span><input id="mobileOutSearch" type="search" autocomplete="off" placeholder="输入药品名、厂家或编码"></label>
+            <div class="mobile-search-results" id="mobileOutResults"></div>
+            <input type="hidden" name="medicineId" id="mobileOutMedicineId">
+            <input type="hidden" name="batchId" id="mobileOutBatchId">
+            <div class="mobile-selected-card" id="mobileOutSelected" hidden></div>
+            <label><span>选择批次 *</span><select id="mobileOutBatchSelect" required></select></label>
+            <div class="mobile-readonly-grid">
+              <div><span>当前库存</span><strong id="mobileOutBatchQty">-</strong></div>
+              <div><span>有效期</span><strong id="mobileOutBatchExpiry">-</strong></div>
+            </div>
           </div>
-          <label><span>出库数量 *</span><input name="quantity" type="number" min="1" inputmode="numeric" required></label>
-          <label><span>出库原因 *</span><select name="reason" required><option>发药</option><option>销售</option><option>报损</option><option>内部使用</option><option>其他</option></select></label>
-          <label><span>备注，可选</span><textarea name="note" rows="2" placeholder="例如：护士手机端出库"></textarea></label>
+          <div class="mobile-form-section">
+            <div class="mobile-section-title">出库信息</div>
+            <div class="mobile-field-row compact">
+              <label><span>出库数量 *</span><input name="quantity" type="number" min="1" inputmode="numeric" required></label>
+              <label><span>出库原因 *</span><select name="reason" required><option>发药</option><option>销售</option><option>报损</option><option>内部使用</option><option>其他</option></select></label>
+            </div>
+            <label><span>备注，可选</span><textarea name="note" rows="2" placeholder="例如：护士手机端出库"></textarea></label>
+          </div>
           <label class="mobile-check"><input name="confirmed" type="checkbox" required><span>我已核对本次出库药品、批次、数量和原因</span></label>
           <div class="mobile-submit-bar"><button class="mobile-primary-btn" type="submit">确认出库</button></div>
         </form>
@@ -430,14 +453,25 @@
       <section class="mobile-panel" id="mobileNewMedicinePanel" data-mobile-panel="new">
         <form id="mobileNewMedicineForm" class="mobile-form">
           <h2>录入药品/商品</h2>
-          <label><span>药品名称 *</span><input name="name" autocomplete="off" required></label>
-          <label><span>分类 *</span><select name="category" required><option>西药</option><option>中成药</option><option>外用药</option><option>其他</option></select></label>
-          <label><span>规格</span><input name="specification" autocomplete="off" placeholder="例如：3g × 10袋"></label>
-          <label><span>生产厂家</span><input name="manufacturer" autocomplete="off"></label>
-          <label><span>单位</span><input name="unit" value="盒" autocomplete="off"></label>
-          <label><span>零售价，可选</span><input name="retailPrice" type="number" min="0" step="0.01" inputmode="decimal"></label>
-          <label><span>库存预警值</span><input name="lowStockThreshold" type="number" min="0" inputmode="numeric" value="20"></label>
-          <label><span>备注，可选</span><textarea name="note" rows="2"></textarea></label>
+          <p class="mobile-form-intro">只建药品主档，不会自动增加库存。</p>
+          <div class="mobile-form-section">
+            <div class="mobile-section-title">基础资料</div>
+            <label><span>药品名称 *</span><input name="name" autocomplete="off" required></label>
+            <div class="mobile-field-row compact">
+              <label><span>分类 *</span><select name="category" required><option>西药</option><option>中成药</option><option>外用药</option><option>其他</option></select></label>
+              <label><span>单位</span><input name="unit" value="盒" autocomplete="off"></label>
+            </div>
+            <label><span>规格</span><input name="specification" autocomplete="off" placeholder="例如：3g × 10袋"></label>
+            <label><span>生产厂家</span><input name="manufacturer" autocomplete="off"></label>
+          </div>
+          <div class="mobile-form-section">
+            <div class="mobile-section-title">库存默认值</div>
+            <div class="mobile-field-row compact">
+              <label><span>零售价，可选</span><input name="retailPrice" type="number" min="0" step="0.01" inputmode="decimal"></label>
+              <label><span>库存预警值</span><input name="lowStockThreshold" type="number" min="0" inputmode="numeric" value="20"></label>
+            </div>
+            <label><span>备注，可选</span><textarea name="note" rows="2"></textarea></label>
+          </div>
           <div class="mobile-submit-bar"><button class="mobile-primary-btn" type="submit">保存并继续入库</button></div>
         </form>
       </section>
